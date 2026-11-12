@@ -44,13 +44,13 @@
     
     .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 500; }
     .row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .btn-step { background: #2c313a; padding: 11px 4px; border-radius: 8px; font-size: 12px; }
-    .btn-step.active { background: var(--nblue); }
 
+    /* Schieberegler Styling */
     input[type="range"] { -webkit-appearance: none; width: 100%; height: 10px; border-radius: 5px; background: #2c313a; outline: none; margin: 8px 0 4px 0; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
     
     #tonSlider { background: linear-gradient(90deg, #ffdfa8 0%, #ffffff 50%, #70d6ff 100%); }
+    #briSlider { background: linear-gradient(90deg, #1a1d24 0%, #ffffff 100%); }
     .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #6c757d; margin-bottom: 6px; }
     
     .hidden { display: none; }
@@ -90,6 +90,10 @@
           <canvas id="colorWheel" width="220" height="220"></canvas>
         </div>
         
+        <div class="sub-label"><span>☀️ Show-Helligkeit / Dunkelheit</span><span id="briText">100%</span></div>
+        <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
+        <div class="slider-hints"><span>0% (Dunkel)</span><span>100% (Max Hell)</span></div>
+
         <div class="sub-label"><span>💾 Farb-Slots (Tippen = Laden | 1 Sek. halten = Speichern)</span></div>
         <div class="slot-row" id="slotContainer"></div>
       </div>
@@ -98,8 +102,9 @@
         <div class="card-title">✨ 16 Show-Effekte (Übernehmen deine Farbe)</div>
         <div class="grid" id="fxGrid"></div>
 
-        <div class="sub-label"><span>Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
-        <div class="row-4" id="spdRow"></div>
+        <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
+        <input type="range" id="spdSlider" min="1" max="100" value="50" oninput="onSpdSliderChange()">
+        <div class="slider-hints"><span>1% (Sehr langsam)</span><span>100% (Sehr schnell)</span></div>
       </div>
     </div>
 
@@ -133,6 +138,7 @@
   let currentHex = "#00a8e8";
   let currentRgbw = { r: 0, g: 168, b: 232, w: 0 };
   let speed = 50;
+  let showBri = 100;
 
   let tflTon = 60;
   let tagHell = 100;
@@ -143,8 +149,6 @@
   let aktuelleKmh = 0;
   let sollAutoReconnect = false;
   let reconnectTimer = null;
-
-  const speedWerte = [25, 50, 75, 100];
 
   let slots = JSON.parse(localStorage.getItem('i20n_web_slots')) || [
     { r: 255, g: 0, b: 0, w: 0, hex: '#ff0000' },
@@ -253,7 +257,6 @@
       document.getElementById('status').innerText = "✅ Verbunden mit i20N Scheinwerfer";
       document.getElementById('status').style.color = "#2b9348";
 
-      // Falls direkt nach dem Einsteigen und Losfahren wiederverbunden wird -> Sofort prüfen!
       if (gpsAktiv && aktuelleKmh >= 5) {
         trenneWegenFahrt();
       }
@@ -265,7 +268,6 @@
   function starteAutoReconnectSchleife() {
     if (reconnectTimer) clearInterval(reconnectTimer);
     reconnectTimer = setInterval(async () => {
-      // Nur wiederverbinden, wenn Gerät bekannt, getrennt und Fahrzeug steht (< 5 km/h)
       if (sollAutoReconnect && bleDevice && !bleDevice.gatt.connected && aktuelleKmh < 5) {
         document.getElementById('status').innerText = "🔄 Suche Scheinwerfer in Reichweite...";
         document.getElementById('status').style.color = "#00a8e8";
@@ -370,6 +372,36 @@
   canvas.addEventListener('touchmove', (e) => { if (isDragging) handleWheelTouch(e); }, {passive: false});
   canvas.addEventListener('touchend', () => isDragging = false);
 
+  // --- SHOW HELLIGKEIT & GESCHWINDIGKEIT SLIDER ---
+  function onBriSliderChange() {
+    if (!gpsAktiv) return;
+    showBri = parseInt(document.getElementById('briSlider').value);
+    document.getElementById('briText').innerText = showBri + '%';
+
+    const now = Date.now();
+    if (now - lastSend > 65) {
+      lastSend = now;
+      if (activeFx === 0) {
+        activeFx = 1;
+        updateUI();
+        senden(`RGBW:${currentRgbw.r},${currentRgbw.g},${currentRgbw.b},${currentRgbw.w}`);
+      }
+      senden(`BRI:${showBri}`);
+    }
+  }
+
+  function onSpdSliderChange() {
+    if (!gpsAktiv) return;
+    speed = parseInt(document.getElementById('spdSlider').value);
+    document.getElementById('spdText').innerText = speed + '%';
+
+    const now = Date.now();
+    if (now - lastSend > 65) {
+      lastSend = now;
+      senden(`SPD:${speed}`);
+    }
+  }
+
   function renderSlots() {
     const container = document.getElementById('slotContainer');
     container.innerHTML = '';
@@ -415,24 +447,6 @@
         senden(`FX:${id}`);
       };
       grid.appendChild(btn);
-    });
-  }
-
-  function renderSpeed() {
-    const row = document.getElementById('spdRow');
-    row.innerHTML = '';
-    speedWerte.forEach(val => {
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-step' + (speed === val ? ' active' : '');
-      btn.innerText = val + '%';
-      btn.onclick = () => {
-        if (!gpsAktiv) return;
-        speed = val;
-        document.getElementById('spdText').innerText = val + '%';
-        renderSpeed();
-        senden(`SPD:${val}`);
-      };
-      row.appendChild(btn);
     });
   }
 
@@ -508,7 +522,6 @@
 
   renderSlots();
   renderEffekte();
-  renderSpeed();
   initTflSliders();
 </script>
 </body>
