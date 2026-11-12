@@ -6,14 +6,13 @@
   <title>i20 N DRL Control</title>
   <style>
     :root { --bg: #121417; --card: #1e2229; --nblue: #00a8e8; --nred: #e63946; --green: #2b9348; --text: #f1faee; --sub: #8d99ae; }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 16px; display: flex; flex-direction: column; align-items: center; }
     
     .header { text-align: center; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; }
     .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
     h1 { font-size: 23px; margin: 0; letter-spacing: 1.5px; font-weight: 800; font-style: italic; display: flex; align-items: center; gap: 7px; }
     
-    /* Typisches Hyundai N Performance Emblem */
     .n-logo {
       display: inline-flex;
       align-items: center;
@@ -31,29 +30,29 @@
       box-shadow: 0 2px 8px rgba(230, 57, 70, 0.5);
       letter-spacing: -1px;
     }
-    .n-logo span {
-      transform: skewX(6deg);
-      display: inline-block;
-    }
+    .n-logo span { transform: skewX(6deg); display: inline-block; }
 
     #status { font-size: 13px; color: var(--sub); margin-top: 8px; font-weight: 500; }
 
     .card { background: var(--card); border-radius: 16px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: relative; }
     .card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
     
-    .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; transition: 0.15s; text-align: center; }
-    .btn:active { transform: scale(0.98); }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; transition: 0.12s; text-align: center; }
+    .btn:active { transform: scale(0.97); }
     .btn-connect { background: var(--nblue); margin-bottom: 10px; }
     .btn-auto { background: var(--green); font-size: 15px; margin-bottom: 10px; }
     .btn-gps { background: #e63946; font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; }
     .btn-gps.active { background: #1d4e89; border: 1px solid var(--nblue); }
     .active-border { outline: 2px solid #fff; }
 
-    /* Sperr-Zustand gilt NUR für den Show-Bereich */
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+    .btn-flash { background: linear-gradient(135deg, #f77f00 0%, #d62828 100%); padding: 16px 8px; font-size: 13px; border: 1px solid rgba(255,255,255,0.2); }
+    .btn-flash.pressing { background: #ffffff; color: #000000; transform: scale(0.95); }
+    .btn-snap { background: linear-gradient(135deg, #3a86ff 0%, #8338ec 100%); padding: 16px 8px; font-size: 13px; border: 1px solid rgba(255,255,255,0.2); }
+
     .locked { opacity: 0.35; pointer-events: none; filter: grayscale(80%); }
     .lock-banner { background: rgba(230, 57, 70, 0.15); border: 1px solid var(--nred); color: #ffb3ba; padding: 10px; border-radius: 10px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
 
-    /* 3 Unterreiter (immer frei wählbar) */
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 6px; }
     .tab-btn { background: var(--card); padding: 12px 4px; border: none; border-radius: 12px; color: var(--text); font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; }
     .tab-active { background: var(--nblue); }
@@ -65,7 +64,7 @@
     .slot-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff; font-weight: bold; color: #fff; text-shadow: 0 1px 3px #000; cursor: pointer; font-size: 14px; }
 
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .btn-fx { background: #2c313a; padding: 12px 8px; border-radius: 10px; font-size: 12px; text-align: left; padding-left: 12px; }
+    .btn-fx { background: #2c313a; padding: 12px 8px; border-radius: 10px; font-size: 12px; text-align: left; padding-left: 10px; }
     .btn-fx.active { background: var(--nblue); }
     
     .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 500; }
@@ -101,7 +100,6 @@
     </button>
   </div>
 
-  <!-- 3 EIGENE UNTERREITER (IMMER FREI) -->
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
     <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
@@ -117,6 +115,15 @@
       </div>
 
       <div id="showContent" class="locked">
+        
+        <div class="card">
+          <div class="card-title"><span>🕹️ Live-Trigger & Foto-Shooting</span></div>
+          <div class="action-grid">
+            <button id="btnFlashHold" class="btn btn-flash">⚡ FLASH HOLD<br><span style="font-size:10px; font-weight:normal;">(Gedrückt halten)</span></button>
+            <button id="btnSnap" class="btn btn-snap" onclick="starteFotoBlitz()">📸 FOTO-BLITZ<br><span id="snapSub" style="font-size:10px; font-weight:normal;">(3s Countdown)</span></button>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-title"><span>🎨 Freies Farbrad</span></div>
           <div class="wheel-wrap">
@@ -132,7 +139,7 @@
         </div>
 
         <div class="card">
-          <div class="card-title"><span>✨ 16 Show-Effekte (Übernehmen deine Farbe)</span></div>
+          <div class="card-title"><span>✨ 18 Show-Effekte (Inkl. Pop & Bang / Glitch)</span></div>
           <div class="grid" id="fxGrid"></div>
 
           <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
@@ -244,7 +251,9 @@
     "🆘 13. SOS-Signal",
     "🏁 14. i20N Performance",
     "🌈 15. Regenbogen Sanft",
-    "🎉 16. Farb-Sprung"
+    "🎉 16. Farb-Sprung",
+    "🔥 17. Exhaust Pop & Bang",
+    "☢️ 18. Cyberpunk Glitch"
   ];
 
   const welcomeEffekte = [
@@ -255,7 +264,51 @@
     { id: 5, name: "🚫 5. Aus (Sofort An)" }
   ];
 
-  // --- VARIABLER TIMER (Nur für Show-Modus) ---
+  // --- LIVE-LICHTHUPE (FLASH HOLD) ---
+  const btnFlash = document.getElementById('btnFlashHold');
+  const startFlash = (e) => {
+    e.preventDefault();
+    if (!gpsAktiv || !bleChar || aktuelleKmh >= 5) return;
+    btnFlash.classList.add('pressing');
+    senden("FLASH:1");
+  };
+  const stopFlash = (e) => {
+    if (e) e.preventDefault();
+    btnFlash.classList.remove('pressing');
+    if (!bleChar) return;
+    senden("FLASH:0");
+  };
+  btnFlash.addEventListener('pointerdown', startFlash);
+  btnFlash.addEventListener('pointerup', stopFlash);
+  btnFlash.addEventListener('pointerleave', stopFlash);
+  btnFlash.addEventListener('pointercancel', stopFlash);
+
+  // --- FOTO-SHOOTING BLITZ (3s COUNTDOWN) ---
+  let snapLaeuft = false;
+  function starteFotoBlitz() {
+    if (!gpsAktiv || !bleChar || aktuelleKmh >= 5 || snapLaeuft) return;
+    snapLaeuft = true;
+    const sub = document.getElementById('snapSub');
+    let sec = 3;
+    sub.innerText = "Blitz in " + sec + "s...";
+    
+    const cd = setInterval(() => {
+      sec--;
+      if (sec > 0) {
+        sub.innerText = "Blitz in " + sec + "s...";
+      } else {
+        clearInterval(cd);
+        sub.innerText = "📸 KLICK!";
+        senden("SNAP");
+        setTimeout(() => {
+          sub.innerText = "(3s Countdown)";
+          snapLaeuft = false;
+        }, 1200);
+      }
+    }, 1000);
+  }
+
+  // --- VARIABLER TIMER ---
   function onTimerSliderChange() {
     if (!gpsAktiv) return;
     timerMinuten = parseInt(document.getElementById('tmrSlider').value);
@@ -264,7 +317,7 @@
 
   function sendeTimerAufChip() {
     if (!gpsAktiv) return;
-    senden(`TMR:${timerMinuten}`);
+    senden("TMR:" + timerMinuten);
     
     if (timerUiInterval) clearInterval(timerUiInterval);
     const badge = document.getElementById('timerCountdown');
@@ -283,7 +336,8 @@
         } else {
           const min = Math.floor(restMs / 60000);
           const sek = Math.floor((restMs % 60000) / 1000);
-          badge.innerText = `⏳ ${min}:${sek < 10 ? '0' : ''}${sek}`;
+          const sekStr = sek < 10 ? "0" + sek : sek;
+          badge.innerText = "⏳ " + min + ":" + sekStr;
         }
       }, 1000);
     } else {
@@ -301,7 +355,7 @@
     badge.classList.remove('running');
   }
 
-  // --- GPS-SPERRE (Sperrt NUR den Show-Bereich, Standlicht & Welcome bleiben immer frei!) ---
+  // --- GPS-SPERRE ---
   function setzeShowSperre(gesperrt) {
     const content = document.getElementById('showContent');
     const banner = document.getElementById('lockBanner');
@@ -451,7 +505,7 @@
     await senden("AUTO");
   }
 
-  // --- FARBRAD (Nur mit GPS) ---
+  // --- FARBRAD ---
   const canvas = document.getElementById('colorWheel');
   const ctx = canvas.getContext('2d');
   const radius = canvas.width / 2;
@@ -466,7 +520,7 @@
       ctx.closePath();
       const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
       grad.addColorStop(0, '#ffffff');
-      grad.addColorStop(1, `hsl(${angle}, 100%, 50%)`);
+      grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)');
       ctx.fillStyle = grad;
       ctx.fill();
     }
@@ -486,7 +540,9 @@
     if (dx * dx + dy * dy > radius * radius) return;
 
     const pixel = ctx.getImageData(x, y, 1, 1).data;
-    const r = pixel[0], g = pixel[1], b = pixel[2];
+    const r = pixel[0];
+    const g = pixel[1];
+    const b = pixel[2];
     currentHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     currentRgbw = { r: r, g: g, b: b, w: 0 };
 
@@ -494,7 +550,7 @@
     if (now - lastSend > 65) {
       lastSend = now;
       if (activeFx === 0) { activeFx = 1; updateUI(); }
-      senden(`RGBW:${r},${g},${b},0`);
+      senden("RGBW:" + r + "," + g + "," + b + ",0");
     }
   }
 
@@ -517,9 +573,9 @@
       if (activeFx === 0) {
         activeFx = 1;
         updateUI();
-        senden(`RGBW:${currentRgbw.r},${currentRgbw.g},${currentRgbw.b},${currentRgbw.w}`);
+        senden("RGBW:" + currentRgbw.r + "," + currentRgbw.g + "," + currentRgbw.b + "," + currentRgbw.w);
       }
-      senden(`BRI:${showBri}`);
+      senden("BRI:" + showBri);
     }
   }
 
@@ -531,7 +587,7 @@
     const now = Date.now();
     if (now - lastSend > 65) {
       lastSend = now;
-      senden(`SPD:${speed}`);
+      senden("SPD:" + speed);
     }
   }
 
@@ -551,7 +607,7 @@
           slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex };
           localStorage.setItem('i20n_web_slots', JSON.stringify(slots));
           renderSlots();
-          alert(`Farbe auf Slot ${idx + 1} gespeichert!`);
+          alert("Farbe auf Slot " + (idx + 1) + " gespeichert!");
         }, 800);
       };
       btn.onpointerup = () => clearTimeout(pressTimer);
@@ -560,7 +616,7 @@
         currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w };
         currentHex = s.hex;
         if (activeFx === 0) { activeFx = 1; updateUI(); }
-        senden(`RGBW:${s.r},${s.g},${s.b},${s.w}`);
+        senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w);
       };
       container.appendChild(btn);
     });
@@ -578,13 +634,12 @@
         if (!gpsAktiv) return;
         activeFx = id;
         updateUI();
-        senden(`FX:${id}`);
+        senden("FX:" + id);
       };
       grid.appendChild(btn);
     });
   }
 
-  // --- WELCOME-HOME EFFEKTE (OHNE GPS-SPERRE NUTZBAR!) ---
   function renderWelcomeEffekte() {
     const grid = document.getElementById('welcomeGrid');
     grid.innerHTML = '';
@@ -605,7 +660,7 @@
         welcomeTyp = item.id;
         renderWelcomeEffekte();
         await senden("PARK");
-        await senden(`WELTEST:${item.id}`);
+        await senden("WELTEST:" + item.id);
       };
       grid.appendChild(btn);
     });
@@ -613,12 +668,11 @@
 
   async function speichereWelcomeAufChip() {
     if (!bleChar) { alert("Bitte zuerst mit den Scheinwerfern verbinden!"); return; }
-    await senden(`WELSET:${welcomeTyp}`);
+    await senden("WELSET:" + welcomeTyp);
     localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp }));
     alert("Gespeichert! Dein ausgewählter Welcome-Effekt wird ab sofort beim Einschalten der Zündung abgespielt.");
   }
 
-  // --- STANDLICHT / TFL EINSTELLUNGEN (OHNE GPS-SPERRE NUTZBAR!) ---
   function initTflSliders() {
     document.getElementById('tonSlider').value = tflTon;
     document.getElementById('tonText').innerText = tflTon + '%';
@@ -657,7 +711,7 @@
       
       activeFx = 1;
       updateUI();
-      senden(`RGBW:${Math.round(mix.r * f)},${Math.round(mix.g * f)},${Math.round(mix.b * f)},${Math.round(mix.w * f)}`);
+      senden("RGBW:" + Math.round(mix.r * f) + "," + Math.round(mix.g * f) + "," + Math.round(mix.b * f) + "," + Math.round(mix.w * f));
     }
   }
 
@@ -667,7 +721,7 @@
     const tagVal = Math.round((tagHell / 100) * 255);
     const nachtVal = Math.round((nachtHell / 100) * 255);
     
-    await senden(`TFLSET:${mix.r},${mix.g},${mix.b},${mix.w},${tagVal},${nachtVal}`);
+    await senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal);
     localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp }));
     activeFx = 0;
     stoppeTimerUi();
@@ -675,7 +729,6 @@
     alert("Gespeichert! Weißton sowie Tagesfahrlicht- und Abblendlicht-Helligkeit sind dauerhaft im Chip hinterlegt.");
   }
 
-  // --- REITER-WECHSEL (IMMER OHNE GPS MÖGLICH!) ---
   function wechselTab(ziel) {
     document.getElementById('viewShow').className = ziel === 'SHOW' ? '' : 'hidden';
     document.getElementById('viewTfl').className = ziel === 'TFL' ? '' : 'hidden';
