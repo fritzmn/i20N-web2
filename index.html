@@ -14,14 +14,20 @@
     .badge { background: var(--nred); padding: 2px 8px; border-radius: 5px; font-weight: bold; font-size: 15px; }
     #status { font-size: 13px; color: var(--sub); margin-top: 6px; font-weight: 500; }
 
-    .card { background: var(--card); border-radius: 16px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+    .card { background: var(--card); border-radius: 16px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: relative; }
     .card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
     
     .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; transition: 0.15s; text-align: center; }
     .btn:active { transform: scale(0.98); }
     .btn-connect { background: var(--nblue); margin-bottom: 10px; }
-    .btn-auto { background: var(--green); font-size: 15px; }
+    .btn-auto { background: var(--green); font-size: 15px; margin-bottom: 10px; }
+    .btn-gps { background: #e63946; font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; }
+    .btn-gps.active { background: #1d4e89; border: 1px solid var(--nblue); }
     .active-border { outline: 2px solid #fff; }
+
+    /* Sperr-Zustand wenn GPS aus ist */
+    .locked { opacity: 0.35; pointer-events: none; filter: grayscale(80%); }
+    .lock-banner { background: rgba(230, 57, 70, 0.15); border: 1px solid var(--nred); color: #ffb3ba; padding: 10px; border-radius: 10px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
 
     .tab-row { display: flex; width: 100%; max-width: 400px; margin-top: 12px; gap: 10px; }
     .tab-btn { flex: 1; background: var(--card); padding: 12px; border: none; border-radius: 12px; color: var(--text); font-weight: bold; font-size: 13px; cursor: pointer; }
@@ -42,11 +48,9 @@
     .btn-step { background: #2c313a; padding: 11px 4px; border-radius: 8px; font-size: 12px; }
     .btn-step.active { background: var(--nblue); }
 
-    /* Schieberegler Styling */
     input[type="range"] { -webkit-appearance: none; width: 100%; height: 10px; border-radius: 5px; background: #2c313a; outline: none; margin: 8px 0 4px 0; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
     
-    /* Farbverlauf für den Weißton-Regler (Warm -> Kaltblau) */
     #tonSlider { background: linear-gradient(90deg, #ffdfa8 0%, #ffffff 50%, #70d6ff 100%); }
     .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #6c757d; margin-bottom: 6px; }
     
@@ -63,52 +67,62 @@
   <div class="card">
     <button class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
     <button id="btnAuto" class="btn btn-auto active-border" onclick="aktiviereAuto()">🛡️ ALLTAGS-AUTOMATIK (TFL / DIMM)</button>
+    <button id="btnGps" class="btn btn-gps" onclick="toggleGps()">
+      <span id="gpsLabel">⚠️ GPS-Schutz AKTIVIEREN (Pflicht)</span>
+      <span id="gpsSpeed">0 km/h</span>
+    </button>
   </div>
 
-  <div class="tab-row">
-    <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Farbrad & 16 Effekte</button>
-    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht / Dimm</button>
+  <div id="lockBanner" class="lock-banner">
+    🔒 Show-Funktionen gesperrt: Bitte oben den GPS-Anfahrschutz einschalten!
   </div>
 
-  <!-- TAB 1: FARBRAD & EFFEKTE -->
-  <div id="viewShow" style="width: 100%; max-width: 400px;">
-    <div class="card">
-      <div class="card-title">🎨 Freies Farbrad</div>
-      <div class="wheel-wrap">
-        <canvas id="colorWheel" width="220" height="220"></canvas>
+  <div id="mainContent" class="locked" style="width: 100%; max-width: 400px;">
+    <div class="tab-row">
+      <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Farbrad & 16 Effekte</button>
+      <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht / Dimm</button>
+    </div>
+
+    <!-- TAB 1: FARBRAD & EFFEKTE -->
+    <div id="viewShow">
+      <div class="card">
+        <div class="card-title">🎨 Freies Farbrad</div>
+        <div class="wheel-wrap">
+          <canvas id="colorWheel" width="220" height="220"></canvas>
+        </div>
+        
+        <div class="sub-label"><span>💾 Farb-Slots (Tippen = Laden | 1 Sek. halten = Speichern)</span></div>
+        <div class="slot-row" id="slotContainer"></div>
       </div>
-      
-      <div class="sub-label"><span>💾 Farb-Slots (Tippen = Laden | 1 Sek. halten = Speichern)</span></div>
-      <div class="slot-row" id="slotContainer"></div>
+
+      <div class="card">
+        <div class="card-title">✨ 16 Show-Effekte (Übernehmen deine Farbe)</div>
+        <div class="grid" id="fxGrid"></div>
+
+        <div class="sub-label"><span>Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
+        <div class="row-4" id="spdRow"></div>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">✨ 16 Show-Effekte (Übernehmen deine Farbe)</div>
-      <div class="grid" id="fxGrid"></div>
+    <!-- TAB 2: STANDLICHT SETUP -->
+    <div id="viewTfl" class="hidden">
+      <div class="card">
+        <div class="card-title">☀️ Standlicht Farbton & Helligkeit</div>
+        
+        <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
+        <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange('TON')">
+        <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
 
-      <div class="sub-label"><span>Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
-      <div class="row-4" id="spdRow"></div>
-    </div>
-  </div>
+        <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit</span><span id="tagText">100%</span></div>
+        <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange('TAG')">
+        <div class="slider-hints"><span>0% (Aus)</span><span>100% (Max)</span></div>
 
-  <!-- TAB 2: STANDLICHT SETUP (MIT SCHIEBEREGLERN) -->
-  <div id="viewTfl" class="hidden" style="width: 100%; max-width: 400px;">
-    <div class="card">
-      <div class="card-title">☀️ Standlicht Farbton & Helligkeit</div>
-      
-      <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
-      <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange('TON')">
-      <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
+        <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht</span><span id="nachtText">20%</span></div>
+        <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange('NACHT')">
+        <div class="slider-hints"><span>0% (Aus)</span><span>70% (Max)</span></div>
 
-      <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit</span><span id="tagText">100%</span></div>
-      <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange('TAG')">
-      <div class="slider-hints"><span>0% (Aus)</span><span>100% (Max)</span></div>
-
-      <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht</span><span id="nachtText">20%</span></div>
-      <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange('NACHT')">
-      <div class="slider-hints"><span>0% (Aus)</span><span>70% (Max)</span></div>
-
-      <button class="btn" style="background: var(--green); margin-top: 20px;" onclick="speichereTflAufChip()">💾 DAUERHAFT IM SCHEINWERFER SPEICHERN</button>
+        <button class="btn" style="background: var(--green); margin-top: 20px;" onclick="speichereTflAufChip()">💾 DAUERHAFT IM SCHEINWERFER SPEICHERN</button>
+      </div>
     </div>
   </div>
 
@@ -123,6 +137,9 @@
   let tflTon = 60;
   let tagHell = 100;
   let nachtHell = 20;
+
+  let gpsAktiv = false;
+  let gpsWatchId = null;
 
   const speedWerte = [25, 50, 75, 100];
 
@@ -149,6 +166,69 @@
     "13. SOS-Signal", "14. i20N Performance", "15. Regenbogen Sanft", "16. Farb-Sprung"
   ];
 
+  // --- GPS PFLICHT-STEUERUNG ---
+  function setzeAppSperre(gesperrt) {
+    const content = document.getElementById('mainContent');
+    const banner = document.getElementById('lockBanner');
+    if (gesperrt) {
+      content.classList.add('locked');
+      banner.classList.remove('hidden');
+    } else {
+      content.classList.remove('locked');
+      banner.classList.add('hidden');
+    }
+  }
+
+  function toggleGps() {
+    if (!gpsAktiv) {
+      if (!navigator.geolocation) {
+        alert("GPS wird von diesem Browser nicht unterstützt. App bleibt gesperrt.");
+        return;
+      }
+      document.getElementById('gpsLabel').innerText = "🛰️ Warte auf GPS-Freigabe...";
+      
+      gpsWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (!gpsAktiv) {
+            gpsAktiv = true;
+            document.getElementById('btnGps').classList.add('active');
+            document.getElementById('gpsLabel').innerText = "🛰️ GPS-Schutz AKTIV (ab 5 km/h)";
+            setzeAppSperre(false); // App wird jetzt freigeschaltet!
+          }
+
+          const mps = pos.coords.speed;
+          const kmh = mps ? Math.round(mps * 3.6) : 0;
+          document.getElementById('gpsSpeed').innerText = kmh + " km/h";
+
+          // Ab 5 km/h sofort zurück auf Alltags-Automatik!
+          if (kmh >= 5 && activeFx !== 0) {
+            aktiviereAuto();
+          }
+        },
+        (err) => {
+          gpsAktiv = false;
+          setzeAppSperre(true);
+          document.getElementById('btnGps').classList.remove('active');
+          document.getElementById('gpsLabel').innerText = "❌ GPS abgelehnt / kein Signal";
+          document.getElementById('gpsSpeed').innerText = "Gesperrt";
+          aktiviereAuto();
+          alert("Ohne GPS-Freigabe bleiben die Show-Funktionen aus Sicherheitsgründen gesperrt.");
+        },
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 8000 }
+      );
+    } else {
+      // Wenn GPS manuell ausgeschaltet wird -> Sofort auf Auto schalten und App sperren!
+      gpsAktiv = false;
+      if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+      document.getElementById('btnGps').classList.remove('active');
+      document.getElementById('gpsLabel').innerText = "⚠️ GPS-Schutz AKTIVIEREN (Pflicht)";
+      document.getElementById('gpsSpeed').innerText = "0 km/h";
+      setzeAppSperre(true);
+      aktiviereAuto();
+    }
+  }
+
+  // --- BLUETOOTH ---
   async function verbinden() {
     try {
       document.getElementById('status').innerText = "Suche i20N Scheinwerfer...";
@@ -204,6 +284,7 @@
   zeichneFarbrad();
 
   function handleWheelTouch(e) {
+    if (!gpsAktiv) return;
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches ? e.touches[0] : e;
@@ -255,6 +336,7 @@
       };
       btn.onpointerup = () => clearTimeout(pressTimer);
       btn.onclick = () => {
+        if (!gpsAktiv) return;
         currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w };
         currentHex = s.hex;
         if (activeFx === 0) { activeFx = 1; updateUI(); }
@@ -273,6 +355,7 @@
       btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : '');
       btn.innerText = name;
       btn.onclick = () => {
+        if (!gpsAktiv) return;
         activeFx = id;
         updateUI();
         senden(`FX:${id}`);
@@ -289,6 +372,7 @@
       btn.className = 'btn btn-step' + (speed === val ? ' active' : '');
       btn.innerText = val + '%';
       btn.onclick = () => {
+        if (!gpsAktiv) return;
         speed = val;
         document.getElementById('spdText').innerText = val + '%';
         renderSpeed();
@@ -298,7 +382,6 @@
     });
   }
 
-  // --- STANDLICHT / TFL SLIDER LOGIK ---
   function initTflSliders() {
     document.getElementById('tonSlider').value = tflTon;
     document.getElementById('tonText').innerText = tflTon + '%';
@@ -311,7 +394,6 @@
   }
 
   function berechneTflMix(ton) {
-    // 0 = reines warmes W, 100 = W mit deutlichem Blau- und leichtem Grün-Anteil (Kaltton)
     return {
       r: Math.round((ton / 100) * 15),
       g: Math.round((ton / 100) * 70),
@@ -321,6 +403,7 @@
   }
 
   function onTflSliderChange(quelle) {
+    if (!gpsAktiv) return;
     tflTon = parseInt(document.getElementById('tonSlider').value);
     tagHell = parseInt(document.getElementById('tagSlider').value);
     nachtHell = parseInt(document.getElementById('nachtSlider').value);
@@ -329,7 +412,6 @@
     document.getElementById('tagText').innerText = tagHell + '%';
     document.getElementById('nachtText').innerText = nachtHell + '%';
 
-    // Live-Vorschau an den Scheinwerfer senden
     const now = Date.now();
     if (now - lastSend > 65) {
       lastSend = now;
@@ -344,6 +426,7 @@
   }
 
   function speichereTflAufChip() {
+    if (!gpsAktiv) return;
     if (!bleChar) { alert("Bitte zuerst mit den Scheinwerfern verbinden!"); return; }
     const mix = berechneTflMix(tflTon);
     const tagVal = Math.round((tagHell / 100) * 255);
@@ -357,6 +440,7 @@
   }
 
   function wechselTab(ziel) {
+    if (!gpsAktiv) return;
     document.getElementById('viewShow').className = ziel === 'SHOW' ? '' : 'hidden';
     document.getElementById('viewTfl').className = ziel === 'TFL' ? '' : 'hidden';
     document.getElementById('tabShow').className = 'tab-btn' + (ziel === 'SHOW' ? ' tab-active' : '');
