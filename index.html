@@ -28,8 +28,9 @@
     .locked { opacity: 0.35; pointer-events: none; filter: grayscale(80%); }
     .lock-banner { background: rgba(230, 57, 70, 0.15); border: 1px solid var(--nred); color: #ffb3ba; padding: 10px; border-radius: 10px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
 
-    .tab-row { display: flex; width: 100%; max-width: 400px; margin-top: 12px; gap: 10px; }
-    .tab-btn { flex: 1; background: var(--card); padding: 12px; border: none; border-radius: 12px; color: var(--text); font-weight: bold; font-size: 13px; cursor: pointer; }
+    /* 3 Unterreiter */
+    .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 6px; }
+    .tab-btn { background: var(--card); padding: 12px 4px; border: none; border-radius: 12px; color: var(--text); font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; }
     .tab-active { background: var(--nblue); }
 
     .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; }
@@ -78,9 +79,11 @@
   </div>
 
   <div id="mainContent" class="locked" style="width: 100%; max-width: 400px;">
+    <!-- 3 EIGENE UNTERREITER -->
     <div class="tab-row">
-      <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Farbrad & 16 Effekte</button>
-      <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht & Welcome</button>
+      <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
+      <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
+      <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
     </div>
 
     <!-- TAB 1: FARBRAD & EFFEKTE -->
@@ -120,7 +123,7 @@
       </div>
     </div>
 
-    <!-- TAB 2: STANDLICHT & WELCOME SETUP -->
+    <!-- TAB 2: STANDLICHT SETUP -->
     <div id="viewTfl" class="hidden">
       <div class="card">
         <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
@@ -136,14 +139,19 @@
         <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht</span><span id="nachtText">20%</span></div>
         <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange('NACHT')">
         <div class="slider-hints"><span>0% (Aus)</span><span>70% (Max)</span></div>
-      </div>
 
+        <button class="btn" style="background: var(--green); margin-top: 20px;" onclick="speichereTflAufChip()">💾 STANDLICHT IM CHIP SPEICHERN</button>
+      </div>
+    </div>
+
+    <!-- TAB 3: EIGENER WELCOME-HOME UNTERREITER -->
+    <div id="viewWel" class="hidden">
       <div class="card">
-        <div class="card-title"><span>👋 Welcome-Home Effekt (ca. 2s in Weiß)</span></div>
+        <div class="card-title"><span>👋 Welcome-Home Animation (2s in Weiß)</span></div>
         <div class="sub-label"><span>Tippen = Vorschau abspielen (nur im Stand)</span></div>
         <div class="grid" id="welcomeGrid"></div>
 
-        <button class="btn" style="background: var(--green); margin-top: 16px;" onclick="speichereTflAufChip()">💾 ALLES DAUERHAFT IM CHIP SPEICHERN</button>
+        <button class="btn" style="background: var(--green); margin-top: 16px;" onclick="speichereWelcomeAufChip()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
       </div>
     </div>
   </div>
@@ -190,7 +198,6 @@
     if (savedTfl.wel) welcomeTyp = savedTfl.wel;
   }
 
-  // 16 Effekte mit passenden Emojis
   const effekte = [
     "🎨 1. Festfarbe",
     "🌊 2. Pulsieren / Atmen",
@@ -210,12 +217,13 @@
     "🎉 16. Farb-Sprung"
   ];
 
-  // 4 Welcome-Effekte mit Emojis
+  // 5 Welcome-Effekte mit Emojis
   const welcomeEffekte = [
     { id: 1, name: "🌅 1. Sanft Hochdimmen" },
     { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
     { id: 3, name: "💓 3. Herzschlag-Start" },
-    { id: 4, name: "🚫 4. Aus (Sofort An)" }
+    { id: 4, name: "✨ 4. Stufen-Zündung" },
+    { id: 5, name: "🚫 5. Aus (Sofort An)" }
   ];
 
   // --- VARIABLER TIMER ---
@@ -281,7 +289,7 @@
     activeFx = 0;
     stoppeTimerUi();
     updateUI();
-    await senden("DRIVE"); // Meldet dem Chip zusätzlich den Fahrbetrieb
+    await senden("DRIVE");
     setTimeout(() => {
       if (bleDevice && bleDevice.gatt.connected) {
         bleDevice.gatt.disconnect();
@@ -546,24 +554,40 @@
     });
   }
 
+  // --- WELCOME-HOME EFFEKTE VORSCHAU & SPEICHERN ---
   function renderWelcomeEffekte() {
     const grid = document.getElementById('welcomeGrid');
     grid.innerHTML = '';
     welcomeEffekte.forEach((item) => {
       const btn = document.createElement('button');
       btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : '');
+      if (item.id === 5) btn.style.gridColumn = "span 2";
       btn.innerText = item.name;
-      btn.onclick = () => {
+      btn.onclick = async () => {
         if (!gpsAktiv) return;
+        if (!bleChar) {
+          alert("Bitte zuerst mit den Scheinwerfern verbinden, um die Vorschau abzuspielen!");
+          return;
+        }
+        if (aktuelleKmh >= 5) {
+          alert("Vorschau ist aus Sicherheitsgründen nur im Stand (< 5 km/h) möglich.");
+          return;
+        }
         welcomeTyp = item.id;
         renderWelcomeEffekte();
-        // Spielt Vorschau im Stand ab (nur wenn Fahrzeug steht!)
-        if (aktuelleKmh < 5) {
-          senden(`WELTEST:${item.id}`);
-        }
+        await senden("PARK");
+        await senden(`WELTEST:${item.id}`);
       };
       grid.appendChild(btn);
     });
+  }
+
+  async function speichereWelcomeAufChip() {
+    if (!gpsAktiv) return;
+    if (!bleChar) { alert("Bitte zuerst mit den Scheinwerfern verbinden!"); return; }
+    await senden(`WELSET:${welcomeTyp}`);
+    localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp }));
+    alert("Gespeichert! Dein ausgewählter Welcome-Effekt wird ab sofort beim Einschalten der Zündung abgespielt.");
   }
 
   function initTflSliders() {
@@ -609,27 +633,30 @@
     }
   }
 
-  function speichereTflAufChip() {
+  async function speichereTflAufChip() {
     if (!gpsAktiv) return;
     if (!bleChar) { alert("Bitte zuerst mit den Scheinwerfern verbinden!"); return; }
     const mix = berechneTflMix(tflTon);
     const tagVal = Math.round((tagHell / 100) * 255);
     const nachtVal = Math.round((nachtHell / 100) * 255);
     
-    senden(`TFLSET:${mix.r},${mix.g},${mix.b},${mix.w},${tagVal},${nachtVal},${welcomeTyp}`);
+    await senden(`TFLSET:${mix.r},${mix.g},${mix.b},${mix.w},${tagVal},${nachtVal}`);
     localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp }));
     activeFx = 0;
     stoppeTimerUi();
     updateUI();
-    alert("Gespeichert! Weißton, Tag-/Nacht-Helligkeit und dein gewählter Welcome-Effekt sind jetzt fest im Chip hinterlegt.");
+    alert("Gespeichert! Weißton sowie Tagesfahrlicht- und Abblendlicht-Helligkeit sind dauerhaft im Chip hinterlegt.");
   }
 
   function wechselTab(ziel) {
     if (!gpsAktiv) return;
     document.getElementById('viewShow').className = ziel === 'SHOW' ? '' : 'hidden';
     document.getElementById('viewTfl').className = ziel === 'TFL' ? '' : 'hidden';
+    document.getElementById('viewWel').className = ziel === 'WEL' ? '' : 'hidden';
+    
     document.getElementById('tabShow').className = 'tab-btn' + (ziel === 'SHOW' ? ' tab-active' : '');
     document.getElementById('tabTfl').className = 'tab-btn' + (ziel === 'TFL' ? ' tab-active' : '');
+    document.getElementById('tabWel').className = 'tab-btn' + (ziel === 'WEL' ? ' tab-active' : '');
   }
 
   function updateUI() {
