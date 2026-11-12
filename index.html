@@ -25,10 +25,11 @@
     .btn-gps.active { background: #1d4e89; border: 1px solid var(--nblue); }
     .active-border { outline: 2px solid #fff; }
 
+    /* Sperr-Zustand gilt jetzt NUR für den Show-Bereich */
     .locked { opacity: 0.35; pointer-events: none; filter: grayscale(80%); }
     .lock-banner { background: rgba(230, 57, 70, 0.15); border: 1px solid var(--nred); color: #ffb3ba; padding: 10px; border-radius: 10px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
 
-    /* 3 Unterreiter */
+    /* 3 Unterreiter (immer frei wählbar) */
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 6px; }
     .tab-btn { background: var(--card); padding: 12px 4px; border: none; border-radius: 12px; color: var(--text); font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; }
     .tab-active { background: var(--nblue); }
@@ -69,61 +70,63 @@
     <button class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
     <button id="btnAuto" class="btn btn-auto active-border" onclick="aktiviereAuto()">🛡️ ALLTAGS-AUTOMATIK (TFL / DIMM)</button>
     <button id="btnGps" class="btn btn-gps" onclick="toggleGps()">
-      <span id="gpsLabel">⚠️ GPS-Schutz AKTIVIEREN (Pflicht)</span>
+      <span id="gpsLabel">⚠️ GPS-Schutz für Show-Modus AUS</span>
       <span id="gpsSpeed">0 km/h</span>
     </button>
   </div>
 
-  <div id="lockBanner" class="lock-banner">
-    🔒 Show-Funktionen gesperrt: Bitte oben den GPS-Anfahrschutz einschalten!
+  <!-- 3 EIGENE UNTERREITER (IMMER FREI) -->
+  <div class="tab-row">
+    <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
+    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
+    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
   </div>
 
-  <div id="mainContent" class="locked" style="width: 100%; max-width: 400px;">
-    <!-- 3 EIGENE UNTERREITER -->
-    <div class="tab-row">
-      <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
-      <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-      <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
-    </div>
-
-    <!-- TAB 1: FARBRAD & EFFEKTE -->
+  <div style="width: 100%; max-width: 400px;">
+    
+    <!-- TAB 1: FARBRAD & EFFEKTE (GESPERRT OHNE GPS) -->
     <div id="viewShow">
-      <div class="card">
-        <div class="card-title"><span>🎨 Freies Farbrad</span></div>
-        <div class="wheel-wrap">
-          <canvas id="colorWheel" width="220" height="220"></canvas>
-        </div>
-        
-        <div class="sub-label"><span>☀️ Show-Helligkeit / Dunkelheit</span><span id="briText">100%</span></div>
-        <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
-        <div class="slider-hints"><span>0% (Dunkel)</span><span>100% (Max Hell)</span></div>
-
-        <div class="sub-label"><span>💾 Farb-Slots (Tippen = Laden | 1 Sek. halten = Speichern)</span></div>
-        <div class="slot-row" id="slotContainer"></div>
+      <div id="lockBanner" class="lock-banner">
+        🔒 Show-Farben & Effekte gesperrt: Bitte oben den GPS-Anfahrschutz einschalten! (Standlicht & Welcome sind frei einstellbar)
       </div>
 
-      <div class="card">
-        <div class="card-title"><span>✨ 16 Show-Effekte (Übernehmen deine Farbe)</span></div>
-        <div class="grid" id="fxGrid"></div>
+      <div id="showContent" class="locked">
+        <div class="card">
+          <div class="card-title"><span>🎨 Freies Farbrad</span></div>
+          <div class="wheel-wrap">
+            <canvas id="colorWheel" width="220" height="220"></canvas>
+          </div>
+          
+          <div class="sub-label"><span>☀️ Show-Helligkeit / Dunkelheit</span><span id="briText">100%</span></div>
+          <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
+          <div class="slider-hints"><span>0% (Dunkel)</span><span>100% (Max Hell)</span></div>
 
-        <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
-        <input type="range" id="spdSlider" min="1" max="100" value="50" oninput="onSpdSliderChange()">
-        <div class="slider-hints"><span>1% (Sehr langsam)</span><span>100% (Sehr schnell)</span></div>
-      </div>
-
-      <!-- VARIABLER SHOW-TIMER -->
-      <div class="card">
-        <div class="card-title">
-          <span>⏱️ Auto-Off Show-Timer</span>
-          <span id="timerCountdown" class="timer-badge">Aus</span>
+          <div class="sub-label"><span>💾 Farb-Slots (Tippen = Laden | 1 Sek. halten = Speichern)</span></div>
+          <div class="slot-row" id="slotContainer"></div>
         </div>
-        <div class="sub-label"><span>Zeit bis zur Rückkehr auf Weiß</span><span id="tmrText">0 Min (Aus)</span></div>
-        <input type="range" id="tmrSlider" min="0" max="60" value="0" oninput="onTimerSliderChange()" onchange="sendeTimerAufChip()">
-        <div class="slider-hints"><span>Aus</span><span>15 Min</span><span>30 Min</span><span>60 Min</span></div>
+
+        <div class="card">
+          <div class="card-title"><span>✨ 16 Show-Effekte (Übernehmen deine Farbe)</span></div>
+          <div class="grid" id="fxGrid"></div>
+
+          <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
+          <input type="range" id="spdSlider" min="1" max="100" value="50" oninput="onSpdSliderChange()">
+          <div class="slider-hints"><span>1% (Sehr langsam)</span><span>100% (Sehr schnell)</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>⏱️ Auto-Off Show-Timer</span>
+            <span id="timerCountdown" class="timer-badge">Aus</span>
+          </div>
+          <div class="sub-label"><span>Zeit bis zur Rückkehr auf Weiß</span><span id="tmrText">0 Min (Aus)</span></div>
+          <input type="range" id="tmrSlider" min="0" max="60" value="0" oninput="onTimerSliderChange()" onchange="sendeTimerAufChip()">
+          <div class="slider-hints"><span>Aus</span><span>15 Min</span><span>30 Min</span><span>60 Min</span></div>
+        </div>
       </div>
     </div>
 
-    <!-- TAB 2: STANDLICHT SETUP -->
+    <!-- TAB 2: STANDLICHT SETUP (IMMER FREI) -->
     <div id="viewTfl" class="hidden">
       <div class="card">
         <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
@@ -144,7 +147,7 @@
       </div>
     </div>
 
-    <!-- TAB 3: EIGENER WELCOME-HOME UNTERREITER -->
+    <!-- TAB 3: WELCOME-HOME UNTERREITER (IMMER FREI) -->
     <div id="viewWel" class="hidden">
       <div class="card">
         <div class="card-title"><span>👋 Welcome-Home Animation (2s in Weiß)</span></div>
@@ -154,6 +157,7 @@
         <button class="btn" style="background: var(--green); margin-top: 16px;" onclick="speichereWelcomeAufChip()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
       </div>
     </div>
+
   </div>
 
 <script>
@@ -217,7 +221,6 @@
     "🎉 16. Farb-Sprung"
   ];
 
-  // 5 Welcome-Effekte mit Emojis
   const welcomeEffekte = [
     { id: 1, name: "🌅 1. Sanft Hochdimmen" },
     { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
@@ -226,7 +229,7 @@
     { id: 5, name: "🚫 5. Aus (Sofort An)" }
   ];
 
-  // --- VARIABLER TIMER ---
+  // --- VARIABLER TIMER (Nur für Show-Modus) ---
   function onTimerSliderChange() {
     if (!gpsAktiv) return;
     timerMinuten = parseInt(document.getElementById('tmrSlider').value);
@@ -272,9 +275,9 @@
     badge.classList.remove('running');
   }
 
-  // --- GPS PFLICHT-STEUERUNG & FAHRT-SPERRE ---
-  function setzeAppSperre(gesperrt) {
-    const content = document.getElementById('mainContent');
+  // --- GPS-SPERRE (Sperrt NUR den Show-Bereich, Standlicht & Welcome bleiben immer frei!) ---
+  function setzeShowSperre(gesperrt) {
+    const content = document.getElementById('showContent');
     const banner = document.getElementById('lockBanner');
     if (gesperrt) {
       content.classList.add('locked');
@@ -303,7 +306,7 @@
   function toggleGps() {
     if (!gpsAktiv) {
       if (!navigator.geolocation) {
-        alert("GPS wird von diesem Browser nicht unterstützt. App bleibt gesperrt.");
+        alert("GPS wird von diesem Browser nicht unterstützt. Show-Modus bleibt gesperrt.");
         return;
       }
       document.getElementById('gpsLabel').innerText = "🛰️ Warte auf GPS-Freigabe...";
@@ -314,7 +317,7 @@
             gpsAktiv = true;
             document.getElementById('btnGps').classList.add('active');
             document.getElementById('gpsLabel').innerText = "🛰️ GPS-Schutz AKTIV (ab 5 km/h)";
-            setzeAppSperre(false);
+            setzeShowSperre(false);
           }
 
           const mps = pos.coords.speed;
@@ -329,12 +332,12 @@
         },
         (err) => {
           gpsAktiv = false;
-          setzeAppSperre(true);
+          setzeShowSperre(true);
           document.getElementById('btnGps').classList.remove('active');
           document.getElementById('gpsLabel').innerText = "❌ GPS abgelehnt / kein Signal";
           document.getElementById('gpsSpeed').innerText = "Gesperrt";
           aktiviereAuto();
-          alert("Ohne GPS-Freigabe bleiben die Show-Funktionen aus Sicherheitsgründen gesperrt.");
+          alert("Ohne GPS-Freigabe bleiben Show-Farben & Effekte gesperrt. Standlicht & Welcome kannst du trotzdem einstellen.");
         },
         { enableHighAccuracy: true, maximumAge: 1000, timeout: 8000 }
       );
@@ -342,9 +345,9 @@
       gpsAktiv = false;
       if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
       document.getElementById('btnGps').classList.remove('active');
-      document.getElementById('gpsLabel').innerText = "⚠️ GPS-Schutz AKTIVIEREN (Pflicht)";
+      document.getElementById('gpsLabel').innerText = "⚠️ GPS-Schutz für Show-Modus AUS";
       document.getElementById('gpsSpeed').innerText = "0 km/h";
-      setzeAppSperre(true);
+      setzeShowSperre(true);
       aktiviereAuto();
     }
   }
@@ -422,7 +425,7 @@
     await senden("AUTO");
   }
 
-  // --- FARBRAD ---
+  // --- FARBRAD (Nur mit GPS) ---
   const canvas = document.getElementById('colorWheel');
   const ctx = canvas.getContext('2d');
   const radius = canvas.width / 2;
@@ -448,7 +451,7 @@
     if (!gpsAktiv) return;
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    const touch = e.touches ? e.touches[0] : e;
+    const touch = e.touches ? e.touches : e;
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
     
@@ -457,7 +460,7 @@
     if (dx * dx + dy * dy > radius * radius) return;
 
     const pixel = ctx.getImageData(x, y, 1, 1).data;
-    const r = pixel[0], g = pixel[1], b = pixel[2];
+    const r = pixel, g = pixel, b = pixel;
     currentHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     currentRgbw = { r: r, g: g, b: b, w: 0 };
 
@@ -517,6 +520,7 @@
       
       let pressTimer;
       btn.onpointerdown = () => {
+        if (!gpsAktiv) return;
         pressTimer = setTimeout(() => {
           slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex };
           localStorage.setItem('i20n_web_slots', JSON.stringify(slots));
@@ -554,7 +558,7 @@
     });
   }
 
-  // --- WELCOME-HOME EFFEKTE VORSCHAU & SPEICHERN ---
+  // --- WELCOME-HOME EFFEKTE (OHNE GPS-SPERRE NUTZBAR!) ---
   function renderWelcomeEffekte() {
     const grid = document.getElementById('welcomeGrid');
     grid.innerHTML = '';
@@ -564,12 +568,11 @@
       if (item.id === 5) btn.style.gridColumn = "span 2";
       btn.innerText = item.name;
       btn.onclick = async () => {
-        if (!gpsAktiv) return;
         if (!bleChar) {
           alert("Bitte zuerst mit den Scheinwerfern verbinden, um die Vorschau abzuspielen!");
           return;
         }
-        if (aktuelleKmh >= 5) {
+        if (gpsAktiv && aktuelleKmh >= 5) {
           alert("Vorschau ist aus Sicherheitsgründen nur im Stand (< 5 km/h) möglich.");
           return;
         }
@@ -583,13 +586,13 @@
   }
 
   async function speichereWelcomeAufChip() {
-    if (!gpsAktiv) return;
     if (!bleChar) { alert("Bitte zuerst mit den Scheinwerfern verbinden!"); return; }
     await senden(`WELSET:${welcomeTyp}`);
     localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp }));
     alert("Gespeichert! Dein ausgewählter Welcome-Effekt wird ab sofort beim Einschalten der Zündung abgespielt.");
   }
 
+  // --- STANDLICHT / TFL EINSTELLUNGEN (OHNE GPS-SPERRE NUTZBAR!) ---
   function initTflSliders() {
     document.getElementById('tonSlider').value = tflTon;
     document.getElementById('tonText').innerText = tflTon + '%';
@@ -611,7 +614,6 @@
   }
 
   function onTflSliderChange(quelle) {
-    if (!gpsAktiv) return;
     tflTon = parseInt(document.getElementById('tonSlider').value);
     tagHell = parseInt(document.getElementById('tagSlider').value);
     nachtHell = parseInt(document.getElementById('nachtSlider').value);
@@ -634,7 +636,6 @@
   }
 
   async function speichereTflAufChip() {
-    if (!gpsAktiv) return;
     if (!bleChar) { alert("Bitte zuerst mit den Scheinwerfern verbinden!"); return; }
     const mix = berechneTflMix(tflTon);
     const tagVal = Math.round((tagHell / 100) * 255);
@@ -648,8 +649,8 @@
     alert("Gespeichert! Weißton sowie Tagesfahrlicht- und Abblendlicht-Helligkeit sind dauerhaft im Chip hinterlegt.");
   }
 
+  // --- REITER-WECHSEL (IMMER OHNE GPS MÖGLICH!) ---
   function wechselTab(ziel) {
-    if (!gpsAktiv) return;
     document.getElementById('viewShow').className = ziel === 'SHOW' ? '' : 'hidden';
     document.getElementById('viewTfl').className = ziel === 'TFL' ? '' : 'hidden';
     document.getElementById('viewWel').className = ziel === 'WEL' ? '' : 'hidden';
@@ -671,3 +672,4 @@
 </script>
 </body>
 </html>
+
