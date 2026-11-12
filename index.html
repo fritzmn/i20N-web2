@@ -23,20 +23,16 @@
     .btn-auto { background: var(--green); font-size: 15px; }
     .active-border { outline: 2px solid #fff; }
 
-    /* Tabs */
     .tab-row { display: flex; width: 100%; max-width: 400px; margin-top: 12px; gap: 10px; }
     .tab-btn { flex: 1; background: var(--card); padding: 12px; border: none; border-radius: 12px; color: var(--text); font-weight: bold; font-size: 13px; cursor: pointer; }
     .tab-active { background: var(--nblue); }
 
-    /* Farbrad Container */
     .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; }
     canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
 
-    /* Slots */
     .slot-row { display: flex; justify-content: space-between; margin-top: 10px; }
     .slot-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff; font-weight: bold; color: #fff; text-shadow: 0 1px 3px #000; cursor: pointer; font-size: 14px; }
 
-    /* Grids & Controls */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .btn-fx { background: #2c313a; padding: 12px 8px; border-radius: 10px; font-size: 12px; }
     .btn-fx.active { background: var(--nblue); }
@@ -66,7 +62,6 @@
     <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht / Dimm</button>
   </div>
 
-  <!-- TAB 1: FARBRAD & EFFEKTE -->
   <div id="viewShow" style="width: 100%; max-width: 400px;">
     <div class="card">
       <div class="card-title">🎨 Freies Farbrad</div>
@@ -87,7 +82,6 @@
     </div>
   </div>
 
-  <!-- TAB 2: STANDLICHT SETUP -->
   <div id="viewTfl" class="hidden" style="width: 100%; max-width: 400px;">
     <div class="card">
       <div class="card-title">☀️ Standlicht RGBW-Weißton & Dimmung</div>
@@ -117,7 +111,10 @@
   let tagHell = 100;
   let nachtHell = 20;
 
-  // Standard-Slots laden
+  const speedWerte = [25, 50, 75, 100];
+  const hellWerte = [25, 50, 75, 100];
+  const nachtWerte = [10, 20, 35, 50];
+
   let slots = JSON.parse(localStorage.getItem('i20n_web_slots')) || [
     { r: 255, g: 0, b: 0, w: 0, hex: '#ff0000' },
     { r: 0, g: 168, b: 232, w: 0, hex: '#00a8e8' },
@@ -137,7 +134,6 @@
     "13. SOS-Signal", "14. i20N Performance", "15. Regenbogen Sanft", "16. Farb-Sprung"
   ];
 
-  // --- BLUETOOTH LOGIK ---
   async function verbinden() {
     try {
       document.getElementById('status').innerText = "Suche i20N Scheinwerfer...";
@@ -170,7 +166,6 @@
     senden("AUTO");
   }
 
-  // --- FARBRAD ZEICHNEN & LOGIK ---
   const canvas = document.getElementById('colorWheel');
   const ctx = canvas.getContext('2d');
   const radius = canvas.width / 2;
@@ -195,19 +190,18 @@
   function handleWheelTouch(e) {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches.clientX : e.clientX;
-    const clientY = e.touches ? e.touches.clientY : e.clientY;
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const touch = e.touches ? e.touches[0] : e;
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
     
     const dx = x - radius;
     const dy = y - radius;
     if (dx * dx + dy * dy > radius * radius) return;
 
     const pixel = ctx.getImageData(x, y, 1, 1).data;
-    const r = pixel, g = pixel, b = pixel;
+    const r = pixel[0], g = pixel[1], b = pixel[2];
     currentHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    currentRgbw = { r, g, b, w: 0 };
+    currentRgbw = { r: r, g: g, b: b, w: 0 };
 
     const now = Date.now();
     if (now - lastSend > 65) {
@@ -221,11 +215,10 @@
   canvas.addEventListener('mousedown', (e) => { isDragging = true; handleWheelTouch(e); });
   canvas.addEventListener('mousemove', (e) => { if (isDragging) handleWheelTouch(e); });
   window.addEventListener('mouseup', () => isDragging = false);
-  canvas.addEventListener('touchstart', (e) => { isDragging = true; handleWheelTouch(e); });
-  canvas.addEventListener('touchmove', (e) => { if (isDragging) handleWheelTouch(e); });
+  canvas.addEventListener('touchstart', (e) => { isDragging = true; handleWheelTouch(e); }, {passive: false});
+  canvas.addEventListener('touchmove', (e) => { if (isDragging) handleWheelTouch(e); }, {passive: false});
   canvas.addEventListener('touchend', () => isDragging = false);
 
-  // --- UI ELEMENTE AUFBAUEN ---
   function renderSlots() {
     const container = document.getElementById('slotContainer');
     container.innerHTML = '';
@@ -238,7 +231,7 @@
       let pressTimer;
       btn.onpointerdown = () => {
         pressTimer = setTimeout(() => {
-          slots[idx] = { ...currentRgbw, hex: currentHex };
+          slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex };
           localStorage.setItem('i20n_web_slots', JSON.stringify(slots));
           renderSlots();
           alert(`Farbe auf Slot ${idx + 1} gespeichert!`);
@@ -275,7 +268,7 @@
   function renderSpeed() {
     const row = document.getElementById('spdRow');
     row.innerHTML = '';
-    .forEach(val => {
+    speedWerte.forEach(val => {
       const btn = document.createElement('button');
       btn.className = 'btn btn-step' + (speed === val ? ' active' : '');
       btn.innerText = val + '%';
@@ -289,7 +282,6 @@
     });
   }
 
-  // --- TFL SETUP LOGIK ---
   function berechneTflMix(ton) {
     return {
       r: Math.round((ton / 100) * 20),
@@ -321,7 +313,7 @@
     const tagRow = document.getElementById('tagRow');
     tagRow.innerHTML = '';
     document.getElementById('tagText').innerText = tagHell + '%';
-    .forEach(val => {
+    hellWerte.forEach(val => {
       const btn = document.createElement('button');
       btn.className = 'btn btn-step' + (tagHell === val ? ' active' : '');
       btn.innerText = val + '%';
@@ -332,7 +324,7 @@
     const nachtRow = document.getElementById('nachtRow');
     nachtRow.innerHTML = '';
     document.getElementById('nachtText').innerText = nachtHell + '%';
-    .forEach(val => {
+    nachtWerte.forEach(val => {
       const btn = document.createElement('button');
       btn.className = 'btn btn-step' + (nachtHell === val ? ' active' : '');
       btn.innerText = val + '%';
