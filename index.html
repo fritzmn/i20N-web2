@@ -15,7 +15,7 @@
     #status { font-size: 13px; color: var(--sub); margin-top: 6px; font-weight: 500; }
 
     .card { background: var(--card); border-radius: 16px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: relative; }
-    .card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .card-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
     
     .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; transition: 0.15s; text-align: center; }
     .btn:active { transform: scale(0.98); }
@@ -39,13 +39,11 @@
     .slot-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff; font-weight: bold; color: #fff; text-shadow: 0 1px 3px #000; cursor: pointer; font-size: 14px; }
 
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .btn-fx { background: #2c313a; padding: 12px 8px; border-radius: 10px; font-size: 12px; }
+    .btn-fx { background: #2c313a; padding: 12px 8px; border-radius: 10px; font-size: 12px; text-align: left; padding-left: 12px; }
     .btn-fx.active { background: var(--nblue); }
     
     .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 500; }
-    .row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 
-    /* Schieberegler Styling */
     input[type="range"] { -webkit-appearance: none; width: 100%; height: 10px; border-radius: 5px; background: #2c313a; outline: none; margin: 8px 0 4px 0; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
     
@@ -53,6 +51,9 @@
     #briSlider { background: linear-gradient(90deg, #1a1d24 0%, #ffffff 100%); }
     .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #6c757d; margin-bottom: 6px; }
     
+    .timer-badge { background: #2c313a; padding: 4px 10px; border-radius: 8px; font-size: 12px; color: var(--nblue); font-weight: bold; }
+    .timer-badge.running { background: rgba(230, 57, 70, 0.25); color: #ff758f; border: 1px solid var(--nred); }
+
     .hidden { display: none; }
   </style>
 </head>
@@ -79,13 +80,13 @@
   <div id="mainContent" class="locked" style="width: 100%; max-width: 400px;">
     <div class="tab-row">
       <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Farbrad & 16 Effekte</button>
-      <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht / Dimm</button>
+      <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht & Welcome</button>
     </div>
 
     <!-- TAB 1: FARBRAD & EFFEKTE -->
     <div id="viewShow">
       <div class="card">
-        <div class="card-title">🎨 Freies Farbrad</div>
+        <div class="card-title"><span>🎨 Freies Farbrad</span></div>
         <div class="wheel-wrap">
           <canvas id="colorWheel" width="220" height="220"></canvas>
         </div>
@@ -99,19 +100,30 @@
       </div>
 
       <div class="card">
-        <div class="card-title">✨ 16 Show-Effekte (Übernehmen deine Farbe)</div>
+        <div class="card-title"><span>✨ 16 Show-Effekte (Übernehmen deine Farbe)</span></div>
         <div class="grid" id="fxGrid"></div>
 
         <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
         <input type="range" id="spdSlider" min="1" max="100" value="50" oninput="onSpdSliderChange()">
         <div class="slider-hints"><span>1% (Sehr langsam)</span><span>100% (Sehr schnell)</span></div>
       </div>
+
+      <!-- VARIABLER SHOW-TIMER -->
+      <div class="card">
+        <div class="card-title">
+          <span>⏱️ Auto-Off Show-Timer</span>
+          <span id="timerCountdown" class="timer-badge">Aus</span>
+        </div>
+        <div class="sub-label"><span>Zeit bis zur Rückkehr auf Weiß</span><span id="tmrText">0 Min (Aus)</span></div>
+        <input type="range" id="tmrSlider" min="0" max="60" value="0" oninput="onTimerSliderChange()" onchange="sendeTimerAufChip()">
+        <div class="slider-hints"><span>Aus</span><span>15 Min</span><span>30 Min</span><span>60 Min</span></div>
+      </div>
     </div>
 
-    <!-- TAB 2: STANDLICHT SETUP -->
+    <!-- TAB 2: STANDLICHT & WELCOME SETUP -->
     <div id="viewTfl" class="hidden">
       <div class="card">
-        <div class="card-title">☀️ Standlicht Farbton & Helligkeit</div>
+        <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
         
         <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
         <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange('TON')">
@@ -124,8 +136,14 @@
         <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht</span><span id="nachtText">20%</span></div>
         <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange('NACHT')">
         <div class="slider-hints"><span>0% (Aus)</span><span>70% (Max)</span></div>
+      </div>
 
-        <button class="btn" style="background: var(--green); margin-top: 20px;" onclick="speichereTflAufChip()">💾 DAUERHAFT IM SCHEINWERFER SPEICHERN</button>
+      <div class="card">
+        <div class="card-title"><span>👋 Welcome-Home Effekt (ca. 2s in Weiß)</span></div>
+        <div class="sub-label"><span>Tippen = Vorschau abspielen (nur im Stand)</span></div>
+        <div class="grid" id="welcomeGrid"></div>
+
+        <button class="btn" style="background: var(--green); margin-top: 16px;" onclick="speichereTflAufChip()">💾 ALLES DAUERHAFT IM CHIP SPEICHERN</button>
       </div>
     </div>
   </div>
@@ -143,12 +161,17 @@
   let tflTon = 60;
   let tagHell = 100;
   let nachtHell = 20;
+  let welcomeTyp = 1;
 
   let gpsAktiv = false;
   let gpsWatchId = null;
   let aktuelleKmh = 0;
   let sollAutoReconnect = false;
   let reconnectTimer = null;
+
+  let timerMinuten = 0;
+  let timerEndZeitpunkt = 0;
+  let timerUiInterval = null;
 
   let slots = JSON.parse(localStorage.getItem('i20n_web_slots')) || [
     { r: 255, g: 0, b: 0, w: 0, hex: '#ff0000' },
@@ -163,17 +186,85 @@
   if (savedTfl) { 
     tflTon = savedTfl.ton; 
     tagHell = savedTfl.tag; 
-    nachtHell = Math.min(savedTfl.nacht, 70); 
+    nachtHell = Math.min(savedTfl.nacht, 70);
+    if (savedTfl.wel) welcomeTyp = savedTfl.wel;
   }
 
+  // 16 Effekte mit passenden Emojis
   const effekte = [
-    "1. Festfarbe", "2. Pulsieren / Atmen", "3. Herzschlag", "4. Strobo-Blitzer",
-    "5. Pace-Car Doppel", "6. Dreifach-Blitzer", "7. US-Polizei", "8. Rundumleuchte",
-    "9. Sanft Einblenden", "10. Sanft Ausblenden", "11. Kerzenflackern", "12. Gewitter / Blitz",
-    "13. SOS-Signal", "14. i20N Performance", "15. Regenbogen Sanft", "16. Farb-Sprung"
+    "🎨 1. Festfarbe",
+    "🌊 2. Pulsieren / Atmen",
+    "💓 3. Herzschlag",
+    "⚡ 4. Strobo-Blitzer",
+    "🏎️ 5. Pace-Car Doppel",
+    "✨ 6. Dreifach-Blitzer",
+    "🚓 7. US-Polizei",
+    "🚨 8. Rundumleuchte",
+    "🌅 9. Sanft Einblenden",
+    "🌇 10. Sanft Ausblenden",
+    "🕯️ 11. Kerzenflackern",
+    "⛈️ 12. Gewitter / Blitz",
+    "🆘 13. SOS-Signal",
+    "🏁 14. i20N Performance",
+    "🌈 15. Regenbogen Sanft",
+    "🎉 16. Farb-Sprung"
   ];
 
-  // --- GPS PFLICHT-STEUERUNG & AUTO-TRENNUNG BEI FAHRT ---
+  // 4 Welcome-Effekte mit Emojis
+  const welcomeEffekte = [
+    { id: 1, name: "🌅 1. Sanft Hochdimmen" },
+    { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
+    { id: 3, name: "💓 3. Herzschlag-Start" },
+    { id: 4, name: "🚫 4. Aus (Sofort An)" }
+  ];
+
+  // --- VARIABLER TIMER ---
+  function onTimerSliderChange() {
+    if (!gpsAktiv) return;
+    timerMinuten = parseInt(document.getElementById('tmrSlider').value);
+    document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min";
+  }
+
+  function sendeTimerAufChip() {
+    if (!gpsAktiv) return;
+    senden(`TMR:${timerMinuten}`);
+    
+    if (timerUiInterval) clearInterval(timerUiInterval);
+    const badge = document.getElementById('timerCountdown');
+
+    if (timerMinuten > 0) {
+      timerEndZeitpunkt = Date.now() + (timerMinuten * 60000);
+      badge.classList.add('running');
+      
+      timerUiInterval = setInterval(() => {
+        const restMs = timerEndZeitpunkt - Date.now();
+        if (restMs <= 0) {
+          clearInterval(timerUiInterval);
+          stoppeTimerUi();
+          activeFx = 0;
+          updateUI();
+        } else {
+          const min = Math.floor(restMs / 60000);
+          const sek = Math.floor((restMs % 60000) / 1000);
+          badge.innerText = `⏳ ${min}:${sek < 10 ? '0' : ''}${sek}`;
+        }
+      }, 1000);
+    } else {
+      stoppeTimerUi();
+    }
+  }
+
+  function stoppeTimerUi() {
+    if (timerUiInterval) clearInterval(timerUiInterval);
+    timerMinuten = 0;
+    document.getElementById('tmrSlider').value = 0;
+    document.getElementById('tmrText').innerText = "0 Min (Aus)";
+    const badge = document.getElementById('timerCountdown');
+    badge.innerText = "Aus";
+    badge.classList.remove('running');
+  }
+
+  // --- GPS PFLICHT-STEUERUNG & FAHRT-SPERRE ---
   function setzeAppSperre(gesperrt) {
     const content = document.getElementById('mainContent');
     const banner = document.getElementById('lockBanner');
@@ -187,7 +278,10 @@
   }
 
   async function trenneWegenFahrt() {
-    await aktiviereAuto();
+    activeFx = 0;
+    stoppeTimerUi();
+    updateUI();
+    await senden("DRIVE"); // Meldet dem Chip zusätzlich den Fahrbetrieb
     setTimeout(() => {
       if (bleDevice && bleDevice.gatt.connected) {
         bleDevice.gatt.disconnect();
@@ -259,6 +353,8 @@
 
       if (gpsAktiv && aktuelleKmh >= 5) {
         trenneWegenFahrt();
+      } else {
+        await senden("PARK");
       }
     } catch (e) {
       bleChar = null;
@@ -313,6 +409,7 @@
 
   async function aktiviereAuto() {
     activeFx = 0;
+    stoppeTimerUi();
     updateUI();
     await senden("AUTO");
   }
@@ -372,7 +469,6 @@
   canvas.addEventListener('touchmove', (e) => { if (isDragging) handleWheelTouch(e); }, {passive: false});
   canvas.addEventListener('touchend', () => isDragging = false);
 
-  // --- SHOW HELLIGKEIT & GESCHWINDIGKEIT SLIDER ---
   function onBriSliderChange() {
     if (!gpsAktiv) return;
     showBri = parseInt(document.getElementById('briSlider').value);
@@ -450,6 +546,26 @@
     });
   }
 
+  function renderWelcomeEffekte() {
+    const grid = document.getElementById('welcomeGrid');
+    grid.innerHTML = '';
+    welcomeEffekte.forEach((item) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : '');
+      btn.innerText = item.name;
+      btn.onclick = () => {
+        if (!gpsAktiv) return;
+        welcomeTyp = item.id;
+        renderWelcomeEffekte();
+        // Spielt Vorschau im Stand ab (nur wenn Fahrzeug steht!)
+        if (aktuelleKmh < 5) {
+          senden(`WELTEST:${item.id}`);
+        }
+      };
+      grid.appendChild(btn);
+    });
+  }
+
   function initTflSliders() {
     document.getElementById('tonSlider').value = tflTon;
     document.getElementById('tonText').innerText = tflTon + '%';
@@ -500,11 +616,12 @@
     const tagVal = Math.round((tagHell / 100) * 255);
     const nachtVal = Math.round((nachtHell / 100) * 255);
     
-    senden(`TFLSET:${mix.r},${mix.g},${mix.b},${mix.w},${tagVal},${nachtVal}`);
-    localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell }));
+    senden(`TFLSET:${mix.r},${mix.g},${mix.b},${mix.w},${tagVal},${nachtVal},${welcomeTyp}`);
+    localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp }));
     activeFx = 0;
+    stoppeTimerUi();
     updateUI();
-    alert("Gespeichert! Weißton sowie Tagesfahrlicht- und Abblendlicht-Helligkeit sind dauerhaft im Chip hinterlegt.");
+    alert("Gespeichert! Weißton, Tag-/Nacht-Helligkeit und dein gewählter Welcome-Effekt sind jetzt fest im Chip hinterlegt.");
   }
 
   function wechselTab(ziel) {
@@ -522,6 +639,7 @@
 
   renderSlots();
   renderEffekte();
+  renderWelcomeEffekte();
   initTflSliders();
 </script>
 </body>
