@@ -25,7 +25,6 @@
     .btn-gps.active { background: #1d4e89; border: 1px solid var(--nblue); }
     .active-border { outline: 2px solid #fff; }
 
-    /* Sperr-Zustand wenn GPS aus ist */
     .locked { opacity: 0.35; pointer-events: none; filter: grayscale(80%); }
     .lock-banner { background: rgba(230, 57, 70, 0.15); border: 1px solid var(--nred); color: #ffb3ba; padding: 10px; border-radius: 10px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
 
@@ -127,6 +126,7 @@
   </div>
 
 <script>
+  let bleDevice = null;
   let bleChar = null;
   let lastSend = 0;
   let activeFx = 0;
@@ -140,6 +140,9 @@
 
   let gpsAktiv = false;
   let gpsWatchId = null;
+  let aktuelleKmh = 0;
+  let sollAutoReconnect = false;
+  let reconnectTimer = null;
 
   const speedWerte = [25, 50, 75, 100];
 
@@ -166,7 +169,7 @@
     "13. SOS-Signal", "14. i20N Performance", "15. Regenbogen Sanft", "16. Farb-Sprung"
   ];
 
-  // --- GPS PFLICHT-STEUERUNG ---
+  // --- GPS PFLICHT-STEUERUNG & AUTO-TRENNUNG BEI FAHRT ---
   function setzeAppSperre(gesperrt) {
     const content = document.getElementById('mainContent');
     const banner = document.getElementById('lockBanner');
@@ -177,6 +180,18 @@
       content.classList.remove('locked');
       banner.classList.add('hidden');
     }
+  }
+
+  async function trenneWegenFahrt() {
+    await aktiviereAuto();
+    setTimeout(() => {
+      if (bleDevice && bleDevice.gatt.connected) {
+        bleDevice.gatt.disconnect();
+      }
+      bleChar = null;
+      document.getElementById('status').innerText = "🔒 Bluetooth getrennt (Fahrt ab 5 km/h)";
+      document.getElementById('status').style.color = "#e63946";
+    }, 250);
   }
 
   function toggleGps() {
@@ -193,16 +208,17 @@
             gpsAktiv = true;
             document.getElementById('btnGps').classList.add('active');
             document.getElementById('gpsLabel').innerText = "🛰️ GPS-Schutz AKTIV (ab 5 km/h)";
-            setzeAppSperre(false); // App wird jetzt freigeschaltet!
+            setzeAppSperre(false);
           }
 
           const mps = pos.coords.speed;
-          const kmh = mps ? Math.round(mps * 3.6) : 0;
-          document.getElementById('gpsSpeed').innerText = kmh + " km/h";
+          aktuelleKmh = mps ? Math.round(mps * 3.6) : 0;
+          document.getElementById('gpsSpeed').innerText = aktuelleKmh + " km/h";
 
-          // Ab 5 km/h sofort zurück auf Alltags-Automatik!
-          if (kmh >= 5 && activeFx !== 0) {
-            aktiviereAuto();
+          if (aktuelleKmh >= 5) {
+            if (activeFx !== 0 || (bleDevice && bleDevice.gatt.connected)) {
+              trenneWegenFahrt();
+            }
           }
         },
         (err) => {
@@ -217,7 +233,6 @@
         { enableHighAccuracy: true, maximumAge: 1000, timeout: 8000 }
       );
     } else {
-      // Wenn GPS manuell ausgeschaltet wird -> Sofort auf Auto schalten und App sperren!
       gpsAktiv = false;
       if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
       document.getElementById('btnGps').classList.remove('active');
@@ -228,19 +243,58 @@
     }
   }
 
-  // --- BLUETOOTH ---
-  async function verbinden() {
+  // --- BLUETOOTH & AUTO-RECONNECT ---
+  async function gattVerbinden() {
+    if (!bleDevice) return;
     try {
-      document.getElementById('status').innerText = "Suche i20N Scheinwerfer...";
-      const device = await navigator.bluetooth.requestDevice({
-        filters: [{ name: 'i20N Scheinwerfer' }],
-        optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
-      });
-      const server = await device.gatt.connect();
+      const server = await bleDevice.gatt.connect();
       const service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
       bleChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
       document.getElementById('status').innerText = "✅ Verbunden mit i20N Scheinwerfer";
       document.getElementById('status').style.color = "#2b9348";
+
+      // Falls direkt nach dem Einsteigen und Losfahren wiederverbunden wird -> Sofort prüfen!
+      if (gpsAktiv && aktuelleKmh >= 5) {
+        trenneWegenFahrt();
+      }
+    } catch (e) {
+      bleChar = null;
+    }
+  }
+
+  function starteAutoReconnectSchleife() {
+    if (reconnectTimer) clearInterval(reconnectTimer);
+    reconnectTimer = setInterval(async () => {
+      // Nur wiederverbinden, wenn Gerät bekannt, getrennt und Fahrzeug steht (< 5 km/h)
+      if (sollAutoReconnect && bleDevice && !bleDevice.gatt.connected && aktuelleKmh < 5) {
+        document.getElementById('status').innerText = "🔄 Suche Scheinwerfer in Reichweite...";
+        document.getElementById('status').style.color = "#00a8e8";
+        await gattVerbinden();
+      }
+    }, 3500);
+  }
+
+  async function verbinden() {
+    try {
+      document.getElementById('status').innerText = "Suche i20N Scheinwerfer...";
+      document.getElementById('status').style.color = "#8d99ae";
+      bleDevice = await navigator.bluetooth.requestDevice({
+        filters: [{ name: 'i20N Scheinwerfer' }],
+        optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
+      });
+      
+      sollAutoReconnect = true;
+
+      bleDevice.addEventListener('gattserverdisconnected', () => {
+        bleChar = null;
+        if (aktuelleKmh < 5) {
+          document.getElementById('status').innerText = "🔄 Reichweite verlassen – Auto-Reconnect bereit";
+          document.getElementById('status').style.color = "#00a8e8";
+        }
+      });
+
+      await gattVerbinden();
+      starteAutoReconnectSchleife();
     } catch (err) {
       document.getElementById('status').innerText = "❌ Fehler: " + err.message;
     }
@@ -255,10 +309,10 @@
     } catch (e) {}
   }
 
-  function aktiviereAuto() {
+  async function aktiviereAuto() {
     activeFx = 0;
     updateUI();
-    senden("AUTO");
+    await senden("AUTO");
   }
 
   // --- FARBRAD ---
