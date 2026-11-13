@@ -190,7 +190,7 @@
         </div>
 
         <div class="card">
-          <div class="card-title"><span>✨ 18 Show-Effekte (Übernehmen deine Farbe)</span></div>
+          <div class="card-title"><span>✨ 24 Show-Effekte (Inkl. Pop & Bang / Glitch)</span></div>
           <div class="grid" id="fxGrid"></div>
 
           <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
@@ -232,6 +232,7 @@
       </div>
     </div>
   </div>
+
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
   let tflTon = 60, tagHell = 100, nachtHell = 20, welcomeTyp = 1, currentHex = "#00a8e8", currentRgbw = { r: 0, g: 168, b: 232, w: 0 };
@@ -251,7 +252,8 @@
     "🏎️ 5. Pace-Car Doppel", "✨ 6. Dreifach-Blitzer", "🚓 7. US-Polizei", "🚨 8. Rundumleuchte",
     "🌅 9. Sanft Einblenden", "🌇 10. Sanft Ausblenden", "🕯️ 11. Kerzenflackern", "⛈️ 12. Gewitter / Blitz",
     "🆘 13. SOS-Signal", "🏁 14. i20N Performance", "🌈 15. Regenbogen Sanft", "🎉 16. Farb-Sprung",
-    "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch"
+    "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch", "⚡ 19. Highway Lichthupe", "🌋 20. Plasma & Magma",
+    "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Arcade Laser"
   ];
 
   const welcomeEffekte = [
@@ -259,16 +261,14 @@
     { id: 3, name: "💓 3. Herzschlag-Start" }, { id: 4, name: "✨ 4. Stufen-Zündung" }, { id: 5, name: "🚫 5. Aus (Sofort An)" }
   ];
 
-  // --- LIVE-LICHTHUPE (FLASH HOLD) ---
   const btnFlash = document.getElementById('btnFlashHold');
-  const startFlash = (e) => { e.preventDefault(); if (!gpsAktiv || !bleChar || aktuelleKmh >= 5) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
+  const startFlash = (e) => { e.preventDefault(); if (!bleChar || aktuelleKmh >= 5) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
   const stopFlash = (e) => { if (e) e.preventDefault(); btnFlash.classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
   btnFlash.addEventListener('pointerdown', startFlash); btnFlash.addEventListener('pointerup', stopFlash); btnFlash.addEventListener('pointerleave', stopFlash); btnFlash.addEventListener('pointercancel', stopFlash);
 
-  // --- FOTO-SHOOTING BLITZ ---
   let snapLaeuft = false;
   function starteFotoBlitz() {
-    if (!gpsAktiv || !bleChar || aktuelleKmh >= 5 || snapLaeuft) return;
+    if (!bleChar || aktuelleKmh >= 5 || snapLaeuft) return;
     snapLaeuft = true; const sub = document.getElementById('snapSub'); let sec = 3; sub.innerText = "Blitz in " + sec + "s...";
     const cd = setInterval(() => {
       sec--;
@@ -277,11 +277,11 @@
     }, 1000);
   }
 
-  function onTimerSliderChange() { if (!gpsAktiv) return; timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
+  function onTimerSliderChange() { timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
   function senden(b) { if (!bleChar) return; let d = new TextEncoder().encode(b); try { if (bleChar.writeValueWithoutResponse) bleChar.writeValueWithoutResponse(d); else bleChar.writeValue(d); } catch (e) {} }
 
   function sendeTimerAufChip() {
-    if (!gpsAktiv) return; senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown');
+    senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown');
     if (timerMinuten > 0) {
       timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running');
       timerUiInterval = setInterval(() => {
@@ -326,7 +326,6 @@
   function zeichneFarbrad() { for (let angle = 0; angle < 360; angle++) { const startAngle = (angle - 2) * Math.PI / 180, endAngle = angle * Math.PI / 180; ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, startAngle, endAngle); ctx.closePath(); const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius); grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)'); ctx.fillStyle = grad; ctx.fill(); } }
   zeichneFarbrad();
 
-  // --- DIE NEUE IPHONE-BERÜHRUNGS-LOGIK ---
   function verarbeiteEingabeKoordinate(clientX, clientY) {
     if (!bleChar) return;
     const rect = canvas.getBoundingClientRect();
@@ -337,7 +336,7 @@
     if (dx * dx + dy * dy > radius * radius) return;
 
     const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-    const r = pixel[0], g = pixel[1], b = pixel[2];
+    const r = pixel, g = pixel, b = pixel;
     currentHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     currentRgbw = { r: r, g: g, b: b, w: 0 };
     
@@ -352,13 +351,11 @@
     }
   }
 
-  // Maus-Events für PC
   let isDragging = false;
   canvas.addEventListener('mousedown', (e) => { isDragging = true; verarbeiteEingabeKoordinate(e.clientX, e.clientY); });
   canvas.addEventListener('mousemove', (e) => { if (isDragging) verarbeiteEingabeKoordinate(e.clientX, e.clientY); });
   window.addEventListener('mouseup', () => isDragging = false);
 
-  // Echte Touch-Events fürs Smartphone (Safari/Bluefy)
   canvas.addEventListener('touchstart', (e) => {
     isDragging = true;
     if (e.touches.length > 0) { verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY); }
@@ -373,20 +370,20 @@
 
   window.addEventListener('touchend', () => isDragging = false);
 
-  function onBriSliderChange() { if (!gpsAktiv) return; showBri = parseInt(document.getElementById('briSlider').value); document.getElementById('briText').innerText = showBri + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; if (activeFx === 0) { activeFx = 1; updateUI(); senden("RGBW:" + currentRgbw.r + "," + currentRgbw.g + "," + currentRgbw.b + "," + currentRgbw.w); } senden("BRI:" + showBri); } }
-  function onSpdSliderChange() { if (!gpsAktiv) return; speed = parseInt(document.getElementById('spdSlider').value); document.getElementById('spdText').innerText = speed + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; senden("SPD:" + speed); } }
+  function onBriSliderChange() { showBri = parseInt(document.getElementById('briSlider').value); document.getElementById('briText').innerText = showBri + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; if (activeFx === 0) { activeFx = 1; updateUI(); senden("RGBW:" + currentRgbw.r + "," + currentRgbw.g + "," + currentRgbw.b + "," + currentRgbw.w); } senden("BRI:" + showBri); } }
+  function onSpdSliderChange() { speed = parseInt(document.getElementById('spdSlider').value); document.getElementById('spdText').innerText = speed + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; senden("SPD:" + speed); } }
 
   function renderSlots() {
     const container = document.getElementById('slotContainer'); container.innerHTML = '';
     slots.forEach((s, idx) => {
       const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.style.backgroundColor = s.hex; btn.innerText = idx + 1;
-      let pressTimer; btn.onpointerdown = () => { if (!gpsAktiv) return; pressTimer = setTimeout(() => { slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex }; localStorage.setItem('i20n_web_slots', JSON.stringify(slots)); renderSlots(); alert("Farbe gespeichert!"); }, 800); };
-      btn.onpointerup = () => clearTimeout(pressTimer); btn.onclick = () => { if (!gpsAktiv) return; currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; const p = document.getElementById('colorPreview'); if (p) p.style.backgroundColor = s.hex; if (activeFx === 0) { activeFx = 1; updateUI(); } senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); };
+      let pressTimer; btn.onpointerdown = () => { pressTimer = setTimeout(() => { slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex }; localStorage.setItem('i20n_web_slots', JSON.stringify(slots)); renderSlots(); alert("Farbe gespeichert!"); }, 800); };
+      btn.onpointerup = () => clearTimeout(pressTimer); btn.onclick = () => { currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; const p = document.getElementById('colorPreview'); if (p) p.style.backgroundColor = s.hex; if (activeFx === 0) { activeFx = 1; updateUI(); } senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); };
       container.appendChild(btn);
     });
   }
 
-  function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { if (!gpsAktiv) return; id = idx + 1; activeFx = id; updateUI(); senden("FX:" + id); }; grid.appendChild(btn); }); }
+  function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { activeFx = id; updateUI(); senden("FX:" + id); }; grid.appendChild(btn); }); }
   function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 5) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } if (gpsAktiv && aktuelleKmh >= 5) return; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("PARK"); await senden("WELTEST:" + item.id); }; grid.appendChild(btn); }); }
   async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
 
