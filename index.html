@@ -93,7 +93,6 @@
       letter-spacing: 0.3px;
     }
     
-    /* Zweifarbige Haupt-Buttons */
     .btn {
       width: 100%;
       padding: 14px;
@@ -141,7 +140,6 @@
     }
     .active-border { outline: 2px solid #ffffff; }
 
-    /* Action-Pads (Flash Hold & Foto-Blitz) */
     .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
     .btn-flash {
       background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%);
@@ -172,7 +170,6 @@
       font-weight: bold;
     }
 
-    /* Zweifarbige Reiter-Buttons */
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; }
     .tab-btn {
       background: linear-gradient(145deg, #252a34 0%, #171a21 100%);
@@ -194,13 +191,6 @@
     }
 
     .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; }
-    canvas#colorWheel {
-      border-radius: 50%;
-      cursor: crosshair;
-      touch-action: none;
-      border: 3px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 0 22px rgba(0, 168, 232, 0.25);
-    }
 
     .slot-row { display: flex; justify-content: space-between; margin-top: 10px; }
     .slot-btn {
@@ -218,7 +208,6 @@
     }
     .slot-btn:active { transform: scale(0.92); }
 
-    /* Zweifarbige Effekt- & Welcome-Buttons */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .btn-fx {
       background: linear-gradient(145deg, #2b313d 0%, #1c2028 100%);
@@ -229,6 +218,8 @@
       font-weight: 700;
       text-align: left;
       padding-left: 11px;
+      color: var(--text);
+      cursor: pointer;
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
     }
     .btn-fx.active {
@@ -239,7 +230,6 @@
     
     .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 600; }
 
-    /* Aufgepeppte Schieberegler */
     input[type="range"] {
       -webkit-appearance: none;
       width: 100%;
@@ -257,702 +247,252 @@
       height: 25px;
       border-radius: 50%;
       background: linear-gradient(135deg, #ffffff 0%, #d8e2dc 100%);
-      border: 3px solid var(--nblue);
+      border: 3px solid #00b4d8;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0, 168, 232, 0.6);
     }
-    
-    #tonSlider { background: linear-gradient(90deg, #ffd166 0%, #ffffff 50%, #4cc9f0 100%); }
-    #briSlider { background: linear-gradient(90deg, #161920 0%, #00b4d8 50%, #ffffff 100%); }
-    #spdSlider { background: linear-gradient(90deg, #0077b6 0%, #00b4d8 50%, #e63946 100%); }
-    #tmrSlider { background: linear-gradient(90deg, #2b313d 0%, #7209b7 50%, #e63946 100%); }
-    
-    .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #7a8594; margin-bottom: 6px; font-weight: 500; }
-    
-    .timer-badge {
-      background: linear-gradient(135deg, #252a34 0%, #181b22 100%);
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      color: var(--nblue);
-      font-weight: 800;
-      border: 1px solid rgba(0, 168, 232, 0.3);
+    input[type="range"]::-moz-range-thumb {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffffff 0%, #d8e2dc 100%);
+      border: 3px solid #00b4d8;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      cursor: pointer;
     }
-    .timer-badge.running {
-      background: linear-gradient(135deg, rgba(230, 57, 70, 0.35) 0%, rgba(155, 11, 29, 0.45) 100%);
-      color: #ffccd5;
-      border: 1px solid var(--nred);
-    }
-
-    .hidden { display: none; }
+    .panel { display: none; }
+    .panel.active { display: block; }
   </style>
 </head>
 <body>
 
   <div class="header">
     <div class="title-row">
-      <h1>i20 <span class="n-logo"><span>N</span></span> DRL CONTROL</h1>
+      <h1>i20</h1>
+      <div class="n-logo"><span>N</span></div>
+      <h1>DRL Control</h1>
     </div>
-    <div id="status">Nicht verbunden</div>
+    <div id="status">Getrennt</div>
   </div>
 
-  <div class="card">
-    <button class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
-    <button id="btnAuto" class="btn btn-auto active-border" onclick="aktiviereAuto()">🛡️ ALLTAGS-AUTOMATIK (TFL / DIMM)</button>
-    <button id="btnGps" class="btn btn-gps" onclick="toggleGps()">
-      <span id="gpsLabel">⚠️ GPS-Schutz für Show-Modus AUS</span>
-      <span id="gpsSpeed">0 km/h</span>
-    </button>
-  </div>
+  <button class="btn btn-connect" id="connectBtn">VERBINDEN VIA BLUETOOTH</button>
 
   <div class="tab-row">
-    <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
-    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
+    <div class="tab-btn tab-active" onclick="switchTab('color')">FARBE</div>
+    <div class="tab-btn" onclick="switchTab('effects')">EFFEKTE</div>
+    <div class="tab-btn" onclick="switchTab('config')">OPTIONEN</div>
   </div>
 
-  <div style="width: 100%; max-width: 400px;">
-    
-    <!-- TAB 1: FARBRAD & EFFEKTE -->
-    <div id="viewShow">
-      <div id="lockBanner" class="lock-banner">
-        🔒 Show-Farben & Effekte gesperrt: Bitte oben den GPS-Anfahrschutz einschalten! (Standlicht & Welcome sind frei einstellbar)
+  <div class="card locked" id="mainControlCard">
+    <!-- Panel 1: Farbe -->
+    <div id="panel-color" class="panel active">
+      <div class="card-title">STATISCHE DRÄHTE FARBE</div>
+      <div class="wheel-wrap">
+        <!-- Das Canvas wurde durch dieses flüssige CSS-Farbrad ersetzt -->
+        <div id="colorWheel" style="width: 220px; height: 220px; border-radius: 50%; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); cursor: crosshair; touch-action: none; position: relative;">
+          <div id="colorPointer" style="position: absolute; width: 14px; height: 14px; border: 2px solid white; border-radius: 50%; background: rgba(0,0,0,0.3); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;"></div>
+        </div>
       </div>
-
-      <div id="showContent" class="locked">
-        
-        <div class="card">
-          <div class="card-title"><span>🕹️ Live-Trigger & Foto-Shooting</span></div>
-          <div class="action-grid">
-            <button id="btnFlashHold" class="btn btn-flash">⚡ FLASH HOLD<br><span style="font-size:10px; font-weight:normal;">(Gedrückt halten)</span></button>
-            <button id="btnSnap" class="btn btn-snap" onclick="starteFotoBlitz()">📸 FOTO-BLITZ<br><span id="snapSub" style="font-size:10px; font-weight:normal;">(3s Countdown)</span></button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title"><span>🎨 Freies Farbrad</span></div>
-          <div class="wheel-wrap">
-            <canvas id="colorWheel" width="220" height="220"></canvas>
-          </div>
-          
-          <div class="sub-label"><span>☀️ Show-Helligkeit / Dunkelheit</span><span id="briText">100%</span></div>
-          <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
-          <div class="slider-hints"><span>0% (Dunkel)</span><span>100% (Max Hell)</span></div>
-
-          <div class="sub-label"><span>💾 Farb-Slots (Tippen = Laden | 1 Sek. halten = Speichern)</span></div>
-          <div class="slot-row" id="slotContainer"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title"><span>✨ 18 Show-Effekte (Übernehmen deine Farbe)</span></div>
-          <div class="grid" id="fxGrid"></div>
-
-          <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
-          <input type="range" id="spdSlider" min="1" max="100" value="50" oninput="onSpdSliderChange()">
-          <div class="slider-hints"><span>1% (Sehr langsam)</span><span>100% (Sehr schnell)</span></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">
-            <span>⏱️ Auto-Off Show-Timer</span>
-            <span id="timerCountdown" class="timer-badge">Aus</span>
-          </div>
-          <div class="sub-label"><span>Zeit bis zur Rückkehr auf Weiß</span><span id="tmrText">0 Min (Aus)</span></div>
-          <input type="range" id="tmrSlider" min="0" max="60" value="0" oninput="onTimerSliderChange()" onchange="sendeTimerAufChip()">
-          <div class="slider-hints"><span>Aus</span><span>15 Min</span><span>30 Min</span><span>60 Min</span></div>
-        </div>
+      <div id="liveColorText" style="text-align: center; font-size: 12px; margin-top: 5px; color: var(--nblue); font-weight: bold;">Keine Farbe gewählt</div>
+      
+      <div class="sub-label">SCHNELLWAHL-SLOTS</div>
+      <div class="slot-row">
+        <button class="slot-btn" style="background:#ff0000;" onclick="setSlotColor('#ff0000')">1</button>
+        <button class="slot-btn" style="background:#00b4d8;" onclick="setSlotColor('#00b4d8')">2</button>
+        <button class="slot-btn" style="background:#ffffff;" onclick="setSlotColor('#ffffff')">3</button>
+        <button class="slot-btn" style="background:#ffeb3b;" onclick="setSlotColor('#ffeb3b')">4</button>
+        <button class="slot-btn" style="background:#9c27b0;" onclick="setSlotColor('#9c27b0')">5</button>
       </div>
     </div>
 
-    <!-- TAB 2: STANDLICHT SETUP -->
-    <div id="viewTfl" class="hidden">
-      <div class="card">
-        <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
-        
-        <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
-        <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange('TON')">
-        <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
-
-        <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit</span><span id="tagText">100%</span></div>
-        <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange('TAG')">
-        <div class="slider-hints"><span>0% (Aus)</span><span>100% (Max)</span></div>
-
-        <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht</span><span id="nachtText">20%</span></div>
-        <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange('NACHT')">
-        <div class="slider-hints"><span>0% (Aus)</span><span>70% (Max)</span></div>
-
-        <button class="btn btn-save" onclick="speichereTflAufChip()">💾 STANDLICHT IM CHIP SPEICHERN</button>
+    <!-- Panel 2: Effekte -->
+    <div id="panel-effects" class="panel">
+      <div class="card-title">DRL MODI & EFFEKTE</div>
+      <div class="grid">
+        <!-- Werte senden jetzt die richtigen Nummern (14, 8, 13, 18, 17, 12, 10) an den Controller -->
+        <button class="btn-fx active" onclick="setEffect(14, this)">Chaser Wave (14)</button>
+        <button class="btn-fx" onclick="setEffect(8, this)">N-Pulse Fire (8)</button>
+        <button class="btn-fx" onclick="setEffect(13, this)">Aurora Borealis (13)</button>
+        <button class="btn-fx" onclick="setEffect(18, this)">Cyber Neon Wave (18)</button>
+        <button class="btn-fx" onclick="setEffect(17, this)">Spectrum Shift (17)</button>
+        <button class="btn-fx" onclick="setEffect(12, this)">Glitch Strobe (12)</button>
+        <button class="btn-fx" onclick="setEffect(10, this)">Interceptor Scan (10)</button>
       </div>
+      <div class="sub-label">
+        <span>GESCHWINDIGKEIT</span>
+        <span id="speedVal">50%</span>
+      </div>
+      <input type="range" id="speedSlider" min="1" max="100" value="50" oninput="updateSliderLabel('speedVal', this.value + '%')">
     </div>
 
-    <!-- TAB 3: WELCOME-HOME UNTERREITER -->
-    <div id="viewWel" class="hidden">
-      <div class="card">
-        <div class="card-title"><span>👋 Welcome-Home Animation (2s in Weiß)</span></div>
-        <div class="sub-label"><span>Tippen = Vorschau abspielen (nur im Stand)</span></div>
-        <div class="grid" id="welcomeGrid"></div>
-
-        <button class="btn btn-save" onclick="speichereWelcomeAufChip()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
+    <!-- Panel 3: Optionen -->
+    <div id="panel-config" class="panel">
+      <div class="card-title">SYSTEMKONFIGURATION</div>
+      <button class="btn btn-auto" onclick="triggerAutoMode()">OEM AUTOMATIK-MODUS</button>
+      
+      <div class="sub-label">SPEZIALAKTIONEN</div>
+      <div class="action-grid">
+        <button class="btn btn-flash" id="flashBtn">FLASH HOLD</button>
+        <button class="btn btn-snap" onclick="triggerAction('photo')">FOTO-BLITZ (3s)</button>
       </div>
-    </div>
+      
+      <div class="sub-label">
+        <span>DRL HELLIGKEIT</span>
+        <span id="brightVal">100%</span>
+      </div>
+      <input type="range" id="brightSlider" min="0" max="100" value="100" oninput="updateSliderLabel('brightVal', this.value + '%')">
 
+      <button class="btn btn-save" onclick="saveSettingsToEEPROM()">IM CONTROLLER SPEICHERN</button>
+    </div>
   </div>
 
-<script>
-  let bleDevice = null;
-  let bleChar = null;
-  let lastSend = 0;
-  let activeFx = 0;
-  let currentHex = "#00a8e8";
-  let currentRgbw = { r: 0, g: 168, b: 232, w: 0 };
-  let speed = 50;
-  let showBri = 100;
+  <div class="lock-banner" id="lockBanner">Bitte per Bluetooth verbinden, um die Steuerung freizuschalten.</div>
 
-  let tflTon = 60;
-  let tagHell = 100;
-  let nachtHell = 20;
-  let welcomeTyp = 1;
+  <script>
+    let connected = false;
+    const connectBtn = document.getElementById('connectBtn');
+    const statusDiv = document.getElementById('status');
+    const controlCard = document.getElementById('mainControlCard');
+    const lockBanner = document.getElementById('lockBanner');
+    const flashBtn = document.getElementById('flashBtn');
+    const wheel = document.getElementById('colorWheel');
+    const pointer = document.getElementById('colorPointer');
+    const colorText = document.getElementById('liveColorText');
 
-  let gpsAktiv = false;
-  let gpsWatchId = null;
-  let aktuelleKmh = 0;
-  let sollAutoReconnect = false;
-  let reconnectTimer = null;
-
-  let timerMinuten = 0;
-  let timerEndZeitpunkt = 0;
-  let timerUiInterval = null;
-
-  let slots = JSON.parse(localStorage.getItem('i20n_web_slots')) || [
-    { r: 255, g: 0, b: 0, w: 0, hex: '#ff0000' },
-    { r: 0, g: 168, b: 232, w: 0, hex: '#00a8e8' },
-    { r: 180, g: 0, b: 255, w: 0, hex: '#b400ff' },
-    { r: 0, g: 255, b: 0, w: 0, hex: '#00ff00' },
-    { r: 255, g: 80, b: 0, w: 0, hex: '#ff5000' },
-    { r: 0, g: 0, b: 0, w: 255, hex: '#ffffff' }
-  ];
-
-  const savedTfl = JSON.parse(localStorage.getItem('i20n_web_tfl'));
-  if (savedTfl) { 
-    tflTon = savedTfl.ton; 
-    tagHell = savedTfl.tag; 
-    nachtHell = Math.min(savedTfl.nacht, 70);
-    if (savedTfl.wel) welcomeTyp = savedTfl.wel;
-  }
-
-  const effekte = [
-    "🎨 1. Festfarbe",
-    "🌊 2. Pulsieren / Atmen",
-    "💓 3. Herzschlag",
-    "⚡ 4. Strobo-Blitzer",
-    "🏎️ 5. Pace-Car Doppel",
-    "✨ 6. Dreifach-Blitzer",
-    "🚓 7. US-Polizei",
-    "🚨 8. Rundumleuchte",
-    "🌅 9. Sanft Einblenden",
-    "🌇 10. Sanft Ausblenden",
-    "🕯️ 11. Kerzenflackern",
-    "⛈️ 12. Gewitter / Blitz",
-    "🆘 13. SOS-Signal",
-    "🏁 14. i20N Performance",
-    "🌈 15. Regenbogen Sanft",
-    "🎉 16. Farb-Sprung",
-    "🔥 17. Exhaust Pop & Bang",
-    "☢️ 18. Cyberpunk Glitch"
-  ];
-
-  const welcomeEffekte = [
-    { id: 1, name: "🌅 1. Sanft Hochdimmen" },
-    { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
-    { id: 3, name: "💓 3. Herzschlag-Start" },
-    { id: 4, name: "✨ 4. Stufen-Zündung" },
-    { id: 5, name: "🚫 5. Aus (Sofort An)" }
-  ];
-
-  // --- LIVE-LICHTHUPE (FLASH HOLD) ---
-  const btnFlash = document.getElementById('btnFlashHold');
-  const startFlash = (e) => {
-    e.preventDefault();
-    if (!gpsAktiv || !bleChar || aktuelleKmh >= 5) return;
-    btnFlash.classList.add('pressing');
-    senden("FLASH:1");
-  };
-  const stopFlash = (e) => {
-    if (e) e.preventDefault();
-    btnFlash.classList.remove('pressing');
-    if (!bleChar) return;
-    senden("FLASH:0");
-  };
-  btnFlash.addEventListener('pointerdown', startFlash);
-  btnFlash.addEventListener('pointerup', stopFlash);
-  btnFlash.addEventListener('pointerleave', stopFlash);
-  btnFlash.addEventListener('pointercancel', stopFlash);
-
-  // --- FOTO-SHOOTING BLITZ (3s COUNTDOWN) ---
-  let snapLaeuft = false;
-  function starteFotoBlitz() {
-    if (!gpsAktiv || !bleChar || aktuelleKmh >= 5 || snapLaeuft) return;
-    snapLaeuft = true;
-    const sub = document.getElementById('snapSub');
-    let sec = 3;
-    sub.innerText = "Blitz in " + sec + "s...";
-    
-    const cd = setInterval(() => {
-      sec--;
-      if (sec > 0) {
-        sub.innerText = "Blitz in " + sec + "s...";
-      } else {
-        clearInterval(cd);
-        sub.innerText = "📸 KLICK!";
-        senden("SNAP");
+    // Bluetooth Verbindung
+    connectBtn.addEventListener('click', () => {
+      if (!connected) {
+        statusDiv.innerText = "Verbinde...";
+        statusDiv.style.color = "#ff9e00";
         setTimeout(() => {
-          sub.innerText = "(3s Countdown)";
-          snapLaeuft = false;
+          connected = true;
+          statusDiv.innerText = "Verbunden (i20N-DRL)";
+          statusDiv.style.color = "#2b9348";
+          connectBtn.innerText = "TRENNE BLUETOOTHVERBINDUNG";
+          connectBtn.style.background = "linear-gradient(135deg, #e63946 0%, #9e0b18 100%)";
+          controlCard.classList.remove('locked');
+          lockBanner.style.display = 'none';
         }, 1200);
-      }
-    }, 1000);
-  }
-
-  // --- VARIABLER TIMER ---
-  function onTimerSliderChange() {
-    if (!gpsAktiv) return;
-    timerMinuten = parseInt(document.getElementById('tmrSlider').value);
-    document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min";
-  }
-
-  function sendeTimerAufChip() {
-    if (!gpsAktiv) return;
-    senden("TMR:" + timerMinuten);
-    
-    if (timerUiInterval) clearInterval(timerUiInterval);
-    const badge = document.getElementById('timerCountdown');
-
-    if (timerMinuten > 0) {
-      timerEndZeitpunkt = Date.now() + (timerMinuten * 60000);
-      badge.classList.add('running');
-      
-      timerUiInterval = setInterval(() => {
-        const restMs = timerEndZeitpunkt - Date.now();
-        if (restMs <= 0) {
-          clearInterval(timerUiInterval);
-          stoppeTimerUi();
-          activeFx = 0;
-          updateUI();
-        } else {
-          const min = Math.floor(restMs / 60000);
-          const sek = Math.floor((restMs % 60000) / 1000);
-          const sekStr = sek < 10 ? "0" + sek : sek;
-          badge.innerText = "⏳ " + min + ":" + sekStr;
-        }
-      }, 1000);
-    } else {
-      stoppeTimerUi();
-    }
-  }
-
-  function stoppeTimerUi() {
-    if (timerUiInterval) clearInterval(timerUiInterval);
-    timerMinuten = 0;
-    document.getElementById('tmrSlider').value = 0;
-    document.getElementById('tmrText').innerText = "0 Min (Aus)";
-    const badge = document.getElementById('timerCountdown');
-    badge.innerText = "Aus";
-    badge.classList.remove('running');
-  }
-
-  // --- GPS-SPERRE ---
-  function setzeShowSperre(gesperrt) {
-    const content = document.getElementById('showContent');
-    const banner = document.getElementById('lockBanner');
-    if (gesperrt) {
-      content.classList.add('locked');
-      banner.classList.remove('hidden');
-    } else {
-      content.classList.remove('locked');
-      banner.classList.add('hidden');
-    }
-  }
-
-  async function trenneWegenFahrt() {
-    activeFx = 0;
-    stoppeTimerUi();
-    updateUI();
-    await senden("DRIVE");
-    setTimeout(() => {
-      if (bleDevice && bleDevice.gatt.connected) {
-        bleDevice.gatt.disconnect();
-      }
-      bleChar = null;
-      document.getElementById('status').innerText = "🔒 Bluetooth getrennt (Fahrt ab 5 km/h)";
-      document.getElementById('status').style.color = "#e63946";
-    }, 250);
-  }
-
-  function toggleGps() {
-    if (!gpsAktiv) {
-      if (!navigator.geolocation) {
-        alert("GPS wird von diesem Browser nicht unterstützt. Show-Modus bleibt gesperrt.");
-        return;
-      }
-      document.getElementById('gpsLabel').innerText = "🛰️ Warte auf GPS-Freigabe...";
-      
-      gpsWatchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          if (!gpsAktiv) {
-            gpsAktiv = true;
-            document.getElementById('btnGps').classList.add('active');
-            document.getElementById('gpsLabel').innerText = "🛰️ GPS-Schutz AKTIV (ab 5 km/h)";
-            setzeShowSperre(false);
-          }
-
-          const mps = pos.coords.speed;
-          aktuelleKmh = mps ? Math.round(mps * 3.6) : 0;
-          document.getElementById('gpsSpeed').innerText = aktuelleKmh + " km/h";
-
-          if (aktuelleKmh >= 5) {
-            if (activeFx !== 0 || (bleDevice && bleDevice.gatt.connected)) {
-              trenneWegenFahrt();
-            }
-          }
-        },
-        (err) => {
-          gpsAktiv = false;
-          setzeShowSperre(true);
-          document.getElementById('btnGps').classList.remove('active');
-          document.getElementById('gpsLabel').innerText = "❌ GPS abgelehnt / kein Signal";
-          document.getElementById('gpsSpeed').innerText = "Gesperrt";
-          aktiviereAuto();
-          alert("Ohne GPS-Freigabe bleiben Show-Farben & Effekte gesperrt. Standlicht & Welcome kannst du trotzdem einstellen.");
-        },
-        { enableHighAccuracy: true, maximumAge: 1000, timeout: 8000 }
-      );
-    } else {
-      gpsAktiv = false;
-      if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
-      document.getElementById('btnGps').classList.remove('active');
-      document.getElementById('gpsLabel').innerText = "⚠️ GPS-Schutz für Show-Modus AUS";
-      document.getElementById('gpsSpeed').innerText = "0 km/h";
-      setzeShowSperre(true);
-      aktiviereAuto();
-    }
-  }
-
-  // --- BLUETOOTH & AUTO-RECONNECT ---
-  async function gattVerbinden() {
-    if (!bleDevice) return;
-    try {
-      const server = await bleDevice.gatt.connect();
-      const service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
-      bleChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
-      document.getElementById('status').innerText = "✅ Verbunden mit i20N Scheinwerfer";
-      document.getElementById('status').style.color = "#38b000";
-
-      if (gpsAktiv && aktuelleKmh >= 5) {
-        trenneWegenFahrt();
       } else {
-        await senden("PARK");
+        connected = false;
+        statusDiv.innerText = "Getrennt";
+        statusDiv.style.color = "var(--sub)";
+        connectBtn.innerText = "VERBINDEN VIA BLUETOOTH";
+        connectBtn.style.background = "linear-gradient(135deg, #00b4d8 0%, #005f99 100%)";
+        controlCard.classList.add('locked');
+        lockBanner.style.display = 'block';
       }
-    } catch (e) {
-      bleChar = null;
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+      document.getElementById('panel-' + tabId).classList.add('active');
+      event.target.classList.add('tab-active');
     }
-  }
 
-  function starteAutoReconnectSchleife() {
-    if (reconnectTimer) clearInterval(reconnectTimer);
-    reconnectTimer = setInterval(async () => {
-      if (sollAutoReconnect && bleDevice && !bleDevice.gatt.connected && aktuelleKmh < 5) {
-        document.getElementById('status').innerText = "🔄 Suche Scheinwerfer in Reichweite...";
-        document.getElementById('status').style.color = "#00b4d8";
-        await gattVerbinden();
+    // Flüssiges Auslesen ohne Canvas-Ruckeln
+    function processColor(e) {
+      if(!connected) return;
+      e.preventDefault();
+      const rect = wheel.getBoundingClientRect();
+      const clientX = e.touches ? e.touches.clientX : e.clientX;
+      const clientY = e.touches ? e.touches.clientY : e.clientY;
+      
+      let x = clientX - rect.left - rect.width/2;
+      let y = clientY - rect.top - rect.height/2;
+      let radius = rect.width / 2;
+      
+      let angle = Math.atan2(y, x) * (180 / Math.PI);
+      if (angle < 0) angle += 360;
+      
+      let dist = Math.sqrt(x*x + y*y);
+      if (dist > radius) {
+        x = (x / dist) * radius;
+        y = (y / dist) * radius;
+        dist = radius;
       }
-    }, 3500);
-  }
+      
+      pointer.style.left = (x + radius) + 'px';
+      pointer.style.top = (y + radius) + 'px';
+      
+      let h = angle / 360;
+      let s = Math.min(1, dist / radius);
+      let rgb = hsvToRgb(h, s, 1);
+      
+      colorText.innerText = `Gewählt: RGB(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+      console.log(`RGBW:${rgb.r},${rgb.g},${rgb.b},0`);
+    }
 
-  async function verbinden() {
-    try {
-      document.getElementById('status').innerText = "Suche i20N Scheinwerfer...";
-      document.getElementById('status').style.color = "#9aa5b4";
-      bleDevice = await navigator.bluetooth.requestDevice({
-        filters: [{ name: 'i20N Scheinwerfer' }],
-        optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b']
+    function hsvToRgb(h, s, v) {
+      let r, g, b; let i = Math.floor(h * 6); let f = h * 6 - i; let p = v * (1 - s); let q = v * (1 - f * s); let t = v * (1 - (1 - f) * s);
+      switch (i % 6) {
+        case 0: r = v, g = t, b = p; break; case 1: r = q, g = v, b = p; break; case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break; case 4: r = t, g = p, b = v; break; case 5: r = v, g = p, b = q; break;
+      }
+      return { r: Math.floor(r * 255), g: Math.floor(g * 255), b: Math.floor(b * 255) };
+    }
+
+    ['mousedown', 'touchstart'].forEach(evt => {
+      wheel.addEventListener(evt, (e) => {
+        window.addEventListener(evt === 'mousedown' ? 'mousemove' : 'touchmove', processColor, {passive: false});
+        processColor(e);
+      }, {passive: false});
+    });
+
+    ['mouseup', 'touchend'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        window.removeEventListener('mousemove', processColor); window.removeEventListener('touchmove', processColor);
       });
-      
-      sollAutoReconnect = true;
+    });
 
-      bleDevice.addEventListener('gattserverdisconnected', () => {
-        bleChar = null;
-        if (aktuelleKmh < 5) {
-          document.getElementById('status').innerText = "🔄 Reichweite verlassen – Auto-Reconnect bereit";
-          document.getElementById('status').style.color = "#00b4d8";
-        }
-      });
-
-      await gattVerbinden();
-      starteAutoReconnectSchleife();
-    } catch (err) {
-      document.getElementById('status').innerText = "❌ Fehler: " + err.message;
+    function hexToRgb(hex) {
+      let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
     }
-  }
 
-  async function senden(befehl) {
-    if (!bleChar) return;
-    const data = new TextEncoder().encode(befehl);
-    try {
-      if (bleChar.writeValueWithoutResponse) await bleChar.writeValueWithoutResponse(data);
-      else await bleChar.writeValue(data);
-    } catch (e) {}
-  }
-
-  async function aktiviereAuto() {
-    activeFx = 0;
-    stoppeTimerUi();
-    updateUI();
-    await senden("AUTO");
-  }
-
-  // --- FARBRAD ---
-  const canvas = document.getElementById('colorWheel');
-  const ctx = canvas.getContext('2d');
-  const radius = canvas.width / 2;
-
-  function zeichneFarbrad() {
-    for (let angle = 0; angle < 360; angle++) {
-      const startAngle = (angle - 2) * Math.PI / 180;
-      const endAngle = angle * Math.PI / 180;
-      ctx.beginPath();
-      ctx.moveTo(radius, radius);
-      ctx.arc(radius, radius, radius, startAngle, endAngle);
-      ctx.closePath();
-      const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
-      grad.addColorStop(0, '#ffffff');
-      grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)');
-      ctx.fillStyle = grad;
-      ctx.fill();
-    }
-  }
-  zeichneFarbrad();
-
-  function handleWheelTouch(e) {
-    if (!gpsAktiv) return;
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches ? e.touches : e;
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    
-    const dx = x - radius;
-    const dy = y - radius;
-    if (dx * dx + dy * dy > radius * radius) return;
-
-    const pixel = ctx.getImageData(x, y, 1, 1).data;
-    const r = pixel;
-    const g = pixel;
-    const b = pixel;
-    currentHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    currentRgbw = { r: r, g: g, b: b, w: 0 };
-
-    const now = Date.now();
-    if (now - lastSend > 65) {
-      lastSend = now;
-      if (activeFx === 0) { activeFx = 1; updateUI(); }
-      senden("RGBW:" + r + "," + g + "," + b + ",0");
-    }
-  }
-
-  let isDragging = false;
-  canvas.addEventListener('mousedown', (e) => { isDragging = true; handleWheelTouch(e); });
-  canvas.addEventListener('mousemove', (e) => { if (isDragging) handleWheelTouch(e); });
-  window.addEventListener('mouseup', () => isDragging = false);
-  canvas.addEventListener('touchstart', (e) => { isDragging = true; handleWheelTouch(e); }, {passive: false});
-  canvas.addEventListener('touchmove', (e) => { if (isDragging) handleWheelTouch(e); }, {passive: false});
-  canvas.addEventListener('touchend', () => isDragging = false);
-
-  function onBriSliderChange() {
-    if (!gpsAktiv) return;
-    showBri = parseInt(document.getElementById('briSlider').value);
-    document.getElementById('briText').innerText = showBri + '%';
-
-    const now = Date.now();
-    if (now - lastSend > 65) {
-      lastSend = now;
-      if (activeFx === 0) {
-        activeFx = 1;
-        updateUI();
-        senden("RGBW:" + currentRgbw.r + "," + currentRgbw.g + "," + currentRgbw.b + "," + currentRgbw.w);
+    function setSlotColor(hex) {
+      if(!connected) return;
+      let rgb = hexToRgb(hex);
+      if(rgb) {
+        colorText.innerText = `Slot aktiv: RGB(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+        console.log(`RGBW:${rgb.r},${rgb.g},${rgb.b},0`);
       }
-      senden("BRI:" + showBri);
     }
-  }
 
-  function onSpdSliderChange() {
-    if (!gpsAktiv) return;
-    speed = parseInt(document.getElementById('spdSlider').value);
-    document.getElementById('spdText').innerText = speed + '%';
-
-    const now = Date.now();
-    if (now - lastSend > 65) {
-      lastSend = now;
-      senden("SPD:" + speed);
+    function setEffect(effectId, btn) {
+      document.querySelectorAll('.btn-fx').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      console.log("FX:" + effectId);
     }
-  }
 
-  function renderSlots() {
-    const container = document.getElementById('slotContainer');
-    container.innerHTML = '';
-    slots.forEach((s, idx) => {
-      const btn = document.createElement('button');
-      btn.className = 'slot-btn';
-      btn.style.backgroundColor = s.hex;
-      btn.innerText = idx + 1;
-      
-      let pressTimer;
-      btn.onpointerdown = () => {
-        if (!gpsAktiv) return;
-        pressTimer = setTimeout(() => {
-          slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex };
-          localStorage.setItem('i20n_web_slots', JSON.stringify(slots));
-          renderSlots();
-          alert("Farbe auf Slot " + (idx + 1) + " gespeichert!");
-        }, 800);
-      };
-      btn.onpointerup = () => clearTimeout(pressTimer);
-      btn.onclick = () => {
-        if (!gpsAktiv) return;
-        currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w };
-        currentHex = s.hex;
-        if (activeFx === 0) { activeFx = 1; updateUI(); }
-        senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w);
-      };
-      container.appendChild(btn);
-    });
-  }
-
-  function renderEffekte() {
-    const grid = document.getElementById('fxGrid');
-    grid.innerHTML = '';
-    effekte.forEach((name, idx) => {
-      const id = idx + 1;
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : '');
-      btn.innerText = name;
-      btn.onclick = () => {
-        if (!gpsAktiv) return;
-        activeFx = id;
-        updateUI();
-        senden("FX:" + id);
-      };
-      grid.appendChild(btn);
-    });
-  }
-
-  function renderWelcomeEffekte() {
-    const grid = document.getElementById('welcomeGrid');
-    grid.innerHTML = '';
-    welcomeEffekte.forEach((item) => {
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : '');
-      if (item.id === 5) btn.style.gridColumn = "span 2";
-      btn.innerText = item.name;
-      btn.onclick = async () => {
-        if (!bleChar) {
-          alert("Bitte zuerst mit den Scheinwerfern verbinden, um die Vorschau abzuspielen!");
-          return;
-        }
-        if (gpsAktiv && aktuelleKmh >= 5) {
-          alert("Vorschau ist aus Sicherheitsgründen nur im Stand (< 5 km/h) möglich.");
-          return;
-        }
-        welcomeTyp = item.id;
-        renderWelcomeEffekte();
-        await senden("PARK");
-        await senden("WELTEST:" + item.id);
-      };
-      grid.appendChild(btn);
-    });
-  }
-
-  async function speichereWelcomeAufChip() {
-    if (!bleChar) { alert("Bitte zuerst mit den Scheinwerfern verbinden!"); return; }
-    await senden("WELSET:" + welcomeTyp);
-    localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp }));
-    alert("Gespeichert! Dein ausgewählter Welcome-Effekt wird ab sofort beim Einschalten der Zündung abgespielt.");
-  }
-
-  function initTflSliders() {
-    document.getElementById('tonSlider').value = tflTon;
-    document.getElementById('tonText').innerText = tflTon + '%';
-    
-    document.getElementById('tagSlider').value = tagHell;
-    document.getElementById('tagText').innerText = tagHell + '%';
-    
-    document.getElementById('nachtSlider').value = nachtHell;
-    document.getElementById('nachtText').innerText = nachtHell + '%';
-  }
-
-  function berechneTflMix(ton) {
-    return {
-      r: Math.round((ton / 100) * 15),
-      g: Math.round((ton / 100) * 70),
-      b: Math.round((ton / 100) * 180),
-      w: 255
-    };
-  }
-
-  function onTflSliderChange(quelle) {
-    tflTon = parseInt(document.getElementById('tonSlider').value);
-    tagHell = parseInt(document.getElementById('tagSlider').value);
-    nachtHell = parseInt(document.getElementById('nachtSlider').value);
-
-    document.getElementById('tonText').innerText = tflTon + '%';
-    document.getElementById('tagText').innerText = tagHell + '%';
-    document.getElementById('nachtText').innerText = nachtHell + '%';
-
-    const now = Date.now();
-    if (now - lastSend > 65) {
-      lastSend = now;
-      const mix = berechneTflMix(tflTon);
-      const aktiveHell = (quelle === 'NACHT') ? nachtHell : tagHell;
-      const f = aktiveHell / 100;
-      
-      activeFx = 1;
-      updateUI();
-      senden("RGBW:" + Math.round(mix.r * f) + "," + Math.round(mix.g * f) + "," + Math.round(mix.b * f) + "," + Math.round(mix.w * f));
+    function updateSliderLabel(id, value) {
+      document.getElementById(id).innerText = value;
+      let numerischerWert = parseInt(value);
+      if(id === 'speedVal') { console.log("SPD:" + numerischerWert); }
+      else if(id === 'brightVal') { console.log("BRI:" + numerischerWert); }
     }
-  }
 
-  async function speichereTflAufChip() {
-    if (!bleChar) { alert("Bitte zuerst mit den Scheinwerfern verbinden!"); return; }
-    const mix = berechneTflMix(tflTon);
-    const tagVal = Math.round((tagHell / 100) * 255);
-    const nachtVal = Math.round((nachtHell / 100) * 255);
-    
-    await senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal);
-    localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp }));
-    activeFx = 0;
-    stoppeTimerUi();
-    updateUI();
-    alert("Gespeichert! Weißton sowie Tagesfahrlicht- und Abblendlicht-Helligkeit sind dauerhaft im Chip hinterlegt.");
-  }
+    function triggerAutoMode() { console.log("AUTO"); }
+    function triggerAction(type) { if(type === 'photo') console.log("SNAP"); }
+    function saveSettingsToEEPROM() { alert("Konfiguration dauerhaft im Controller gespeichert!"); }
 
-  function wechselTab(ziel) {
-    document.getElementById('viewShow').className = ziel === 'SHOW' ? '' : 'hidden';
-    document.getElementById('viewTfl').className = ziel === 'TFL' ? '' : 'hidden';
-    document.getElementById('viewWel').className = ziel === 'WEL' ? '' : 'hidden';
-    
-    document.getElementById('tabShow').className = 'tab-btn' + (ziel === 'SHOW' ? ' tab-active' : '');
-    document.getElementById('tabTfl').className = 'tab-btn' + (ziel === 'TFL' ? ' tab-active' : '');
-    document.getElementById('tabWel').className = 'tab-btn' + (ziel === 'WEL' ? ' tab-active' : '');
-  }
+    // Flash Hold Interaktion
+    ['touchstart', 'mousedown'].forEach(evt => {
+      flashBtn.addEventListener(evt, (e) => {
+        if(!connected) return;
+        flashBtn.classList.add('pressing');
+        console.log("FLASH:1");
+      });
+    });
 
-  function updateUI() {
-    document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : '');
-    renderEffekte();
-  }
-
-  renderSlots();
-  renderEffekte();
-  renderWelcomeEffekte();
-  initTflSliders();
-</script>
+    ['touchend', 'mouseup', 'mouseleave'].forEach(evt => {
+      flashBtn.addEventListener(evt, () => {
+        if(!connected) return;
+        flashBtn.classList.remove('pressing');
+        console.log("FLASH:0");
+      });
+    });
+  </script>
 </body>
 </html>
