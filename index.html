@@ -190,7 +190,14 @@
       box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4);
     }
 
-    .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
+    .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; }
+    canvas#colorWheel {
+      border-radius: 50%;
+      cursor: crosshair;
+      touch-action: none;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 22px rgba(0, 168, 232, 0.25);
+    }
 
     .slot-row { display: flex; justify-content: space-between; margin-top: 10px; }
     .slot-btn {
@@ -221,16 +228,12 @@
       color: var(--text);
       cursor: pointer;
       box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
-      display: flex;
-      flex-direction: column;
     }
-    .btn-fx span { font-size: 9px; color: var(--sub); font-weight: normal; margin-top: 2px; }
     .btn-fx.active {
       background: linear-gradient(135deg, #00b4d8 0%, #e63946 100%);
       border: 1px solid #ffffff;
       box-shadow: 0 4px 14px rgba(0, 180, 216, 0.45);
     }
-    .btn-fx.active span { color: #fff; }
     
     .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 600; }
 
@@ -292,12 +295,8 @@
     <div id="panel-color" class="panel active">
       <div class="card-title">STATISCHE DRÄHTE FARBE</div>
       <div class="wheel-wrap">
-        <div id="colorWheel" style="width: 220px; height: 220px; border-radius: 50%; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); cursor: crosshair; touch-action: none; position: relative;">
-          <div id="colorPointer" style="position: absolute; width: 14px; height: 14px; border: 2px solid white; border-radius: 50%; background: rgba(0,0,0,0.3); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;"></div>
-        </div>
+        <canvas id="colorWheel" width="220" height="220"></canvas>
       </div>
-      <div id="liveColorText" style="text-align: center; font-size: 12px; margin-top: 5px; color: var(--nblue); font-weight: bold;">Keine Farbe gewählt</div>
-      
       <div class="sub-label">SCHNELLWAHL-SLOTS</div>
       <div class="slot-row">
         <button class="slot-btn" style="background:#ff0000;" onclick="setSlotColor('#ff0000')">1</button>
@@ -312,13 +311,12 @@
     <div id="panel-effects" class="panel">
       <div class="card-title">DRL MODI & EFFEKTE</div>
       <div class="grid">
-        <button class="btn-fx active" onclick="setEffect(14, this)">Chaser Wave<span>Effekt 14 - Multi-Segment</span></button>
-        <button class="btn-fx" onclick="setEffect(8, this)">N-Pulse Fire<span>Effekt 8 - N-Performance</span></button>
-        <button class="btn-fx" onclick="setEffect(13, this)">Aurora Borealis<span>Effekt 13 - Nordlicht Flow</span></button>
-        <button class="btn-fx" onclick="setEffect(18, this)">Cyber Neon Wave<span>Effekt 18 - Premium Mix</span></button>
-        <button class="btn-fx" onclick="setEffect(17, this)">Spectrum Shift<span>Effekt 17 - Fade Spectrum</span></button>
-        <button class="btn-fx" onclick="setEffect(12, this)">Glitch Strobe<span>Effekt 12 - Digital Storm</span></button>
-        <button class="btn-fx" onclick="setEffect(10, this)">Interceptor Scan<span>Effekt 10 - In/Out Scanner</span></button>
+        <button class="btn-fx active" onclick="setEffect('static', this)">Statisches Licht</button>
+        <button class="btn-fx" onclick="setEffect('breath', this)">Atmen</button>
+        <button class="btn-fx" onclick="setEffect('rainbow', this)">Regenbogen-Welle</button>
+        <button class="btn-fx" onclick="setEffect('strobe', this)">N-Performance Strobe</button>
+        <button class="btn-fx" onclick="setEffect('scan', this)">Lauflicht Scan</button>
+        <button class="btn-fx" onclick="setEffect('fade', this)">Farbwechsel sanft</button>
       </div>
       <div class="sub-label">
         <span>GESCHWINDIGKEIT</span>
@@ -357,11 +355,8 @@
     const controlCard = document.getElementById('mainControlCard');
     const lockBanner = document.getElementById('lockBanner');
     const flashBtn = document.getElementById('flashBtn');
-    const wheel = document.getElementById('colorWheel');
-    const pointer = document.getElementById('colorPointer');
-    const colorText = document.getElementById('liveColorText');
 
-    // Bluetooth Verbindung Handler
+    // Bluetooth Verbindungs-Handler (Simuliert für On-Board-Module)
     connectBtn.addEventListener('click', () => {
       if (!connected) {
         statusDiv.innerText = "Verbinde...";
@@ -374,6 +369,7 @@
           connectBtn.style.background = "linear-gradient(135deg, #e63946 0%, #9e0b18 100%)";
           controlCard.classList.remove('locked');
           lockBanner.style.display = 'none';
+          drawColorWheel();
         }, 1200);
       } else {
         connected = false;
@@ -386,105 +382,110 @@
       }
     });
 
+    // Tab-Wechsel-Logik
     function switchTab(tabId) {
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+      
       document.getElementById('panel-' + tabId).classList.add('active');
       event.target.classList.add('tab-active');
+      if(tabId === 'color' && connected) {
+        setTimeout(drawColorWheel, 50);
+      }
     }
 
-    // Präzise Touch- und Maus-Farbwahl (CSS Conic-Gradient-basiert)
-    function processColor(e) {
-      if(!connected) return;
-      e.preventDefault();
-      const rect = wheel.getBoundingClientRect();
-      const clientX = e.touches ? e.touches.clientX : e.clientX;
-      const clientY = e.touches ? e.touches.clientY : e.clientY;
+    // Canvas Farbrad generieren
+    function drawColorWheel() {
+      const canvas = document.getElementById('colorWheel');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const radius = canvas.width / 2;
       
-      let x = clientX - rect.left - rect.width/2;
-      let y = clientY - rect.top - rect.height/2;
-      let radius = rect.width / 2;
-      
-      let angle = Math.atan2(y, x) * (180 / Math.PI);
-      if (angle < 0) angle += 360;
-      
-      let dist = Math.sqrt(x*x + y*y);
-      if (dist > radius) {
-        x = (x / dist) * radius;
-        y = (y / dist) * radius;
-        dist = radius;
+      for (let x = -radius; x < radius; x++) {
+        for (let y = -radius; y < radius; y++) {
+          if (x * x + y * y <= radius * radius) {
+            let angle = Math.atan2(y, x);
+            if (angle < 0) angle += 2 * Math.PI;
+            let h = angle / (2 * Math.PI);
+            let s = Math.sqrt(x * x + y * y) / radius;
+            ctx.fillStyle = hsvToRgb(h, s, 1);
+            ctx.fillRect(x + radius, y + radius, 1, 1);
+          }
+        }
       }
-      
-      pointer.style.left = (x + radius) + 'px';
-      pointer.style.top = (y + radius) + 'px';
-      
-      let h = angle / 360;
-      let s = Math.min(1, dist / radius);
-      let rgb = hsvToRgb(h, s, 1);
-      
-      colorText.innerText = `Gewählt: RGB(${rgb.r}, ${rgb.g}, ${rgb.b})`;
-      console.log(`RGBW:${rgb.r},${rgb.g},${rgb.b},0`);
     }
 
     function hsvToRgb(h, s, v) {
-      let r, g, b; let i = Math.floor(h * 6); let f = h * 6 - i; let p = v * (1 - s); let q = v * (1 - f * s); let t = v * (1 - (1 - f) * s);
+      let r, g, b;
+      let i = Math.floor(h * 6);
+      let f = h * 6 - i;
+      let p = v * (1 - s);
+      let q = v * (1 - f * s);
+      let t = v * (1 - (1 - f) * s);
       switch (i % 6) {
-        case 0: r = v, g = t, b = p; break; case 1: r = q, g = v, b = p; break; case 2: r = p, g = v, b = t; break;
-        case 3: r = p, g = q, b = v; break; case 4: r = t, g = p, b = v; break; case 5: r = v, g = p, b = q; break;
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
       }
-      return { r: Math.floor(r * 255), g: Math.floor(g * 255), b: Math.floor(b * 255) };
+      return `rgb(${Math.floor(r*255)},${Math.floor(g*255)},${Math.floor(b*255)})`;
     }
 
-    ['mousedown', 'touchstart'].forEach(evt => {
-      wheel.addEventListener(evt, (e) => {
-        window.addEventListener(evt === 'mousedown' ? 'mousemove' : 'touchmove', processColor, {passive: false});
-        processColor(e);
-      }, {passive: false});
-    });
+    // Interaktion mit Farbrad
+    document.getElementById('colorWheel').addEventListener('touchstart', handleColorSelect);
+    document.getElementById('colorWheel').addEventListener('touchmove', handleColorSelect);
+    document.getElementById('colorWheel').addEventListener('mousedown', handleColorSelect);
 
-    ['mouseup', 'touchend'].forEach(evt => {
-      window.addEventListener(evt, () => {
-        window.removeEventListener('mousemove', processColor); window.removeEventListener('touchmove', processColor);
-      });
-    });
-
-    function hexToRgb(hex) {
-      let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+    function handleColorSelect(e) {
+      if(!connected) return;
+      const canvas = document.getElementById('colorWheel');
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.getImageData(x, y, 1, 1).data;
+      if(imgData[3] > 0) {
+        const hex = "#" + ((1 << 24) + (imgData[0] << 16) + (imgData[1] << 8) + imgData[2]).toString(16).slice(1);
+        console.log("Sende Farbe: " + hex);
+      }
     }
 
     function setSlotColor(hex) {
-      if(!connected) return;
-      let rgb = hexToRgb(hex);
-      if(rgb) {
-        colorText.innerText = `Slot aktiv: RGB(${rgb.r}, ${rgb.g}, ${rgb.b})`;
-        console.log(`RGBW:${rgb.r},${rgb.g},${rgb.b},0`);
-      }
+      console.log("Slot geladen: " + hex);
     }
 
-    function setEffect(effectId, btn) {
+    function setEffect(effectName, btn) {
       document.querySelectorAll('.btn-fx').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      console.log("FX:" + effectId);
+      console.log("Effekt gewechselt auf: " + effectName);
     }
 
     function updateSliderLabel(id, value) {
       document.getElementById(id).innerText = value;
-      let numerischerWert = parseInt(value);
-      if(id === 'speedVal') { console.log("SPD:" + numerischerWert); }
-      else if(id === 'brightVal') { console.log("BRI:" + numerischerWert); }
     }
 
-    function triggerAutoMode() { console.log("AUTO"); }
-    function triggerAction(type) { if(type === 'photo') console.log("SNAP"); }
-    function saveSettingsToEEPROM() { alert("Konfiguration dauerhaft im Controller gespeichert!"); }
+    function triggerAutoMode() {
+      console.log("OEM Automodus aktiv.");
+    }
 
-    // Flash Hold Interaktion
+    function triggerAction(type) {
+      console.log("Spezialaktion ausgelöst: " + type);
+    }
+
+    function saveSettingsToEEPROM() {
+      alert("Konfiguration dauerhaft im Controller gespeichert!");
+    }
+
+    // Flash Hold Interaktion (Hold down to trigger)
     ['touchstart', 'mousedown'].forEach(evt => {
       flashBtn.addEventListener(evt, (e) => {
         if(!connected) return;
         flashBtn.classList.add('pressing');
-        console.log("FLASH:1");
+        console.log("Flash Hold: AN");
       });
     });
 
@@ -492,7 +493,7 @@
       flashBtn.addEventListener(evt, () => {
         if(!connected) return;
         flashBtn.classList.remove('pressing');
-        console.log("FLASH:0");
+        console.log("Flash Hold: AUS");
       });
     });
   </script>
