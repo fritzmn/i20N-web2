@@ -108,8 +108,16 @@
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; }
     .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
     .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
-    .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; }
+    .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
     canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); }
+    
+    /* Das neue Live-Farbauge im DRL-Design */
+    .wheel-preview-box {
+      width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
+      background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
     .slot-row { display: flex; justify-content: space-between; margin-top: 10px; }
     .slot-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.85); font-weight: 900; color: #fff; text-shadow: 0 1px 4px #000; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); transition: 0.12s; }
     .slot-btn:active { transform: scale(0.92); }
@@ -130,7 +138,6 @@
   </style>
 </head>
 <body>
-
   <div class="header">
     <div class="title-row">
       <h1>i20 <span class="n-logo"><span>N</span></span> DRL CONTROL</h1>
@@ -154,11 +161,15 @@
   </div>
 
   <div style="width: 100%; max-width: 400px;">
+    
+    <!-- TAB 1: FARBRAD & EFFEKTE -->
     <div id="viewShow">
       <div id="lockBanner" class="lock-banner">
         🔒 Show-Farben & Effekte gesperrt: Bitte oben den GPS-Anfahrschutz einschalten! (Standlicht & Welcome sind frei einstellbar)
       </div>
+
       <div id="showContent" class="locked">
+        
         <div class="card">
           <div class="card-title"><span>🕹️ Live-Trigger & Foto-Shooting</span></div>
           <div class="action-grid">
@@ -166,26 +177,37 @@
             <button id="btnSnap" class="btn btn-snap" onclick="starteFotoBlitz()">📸 FOTO-BLITZ<br><span id="snapSub" style="font-size:10px; font-weight:normal;">(3s Countdown)</span></button>
           </div>
         </div>
+
         <div class="card">
           <div class="card-title"><span>🎨 Freies Farbrad</span></div>
           <div class="wheel-wrap">
+            <!-- Das neue Vorschau-Auge direkt über dem Farbrad -->
+            <div id="colorPreview" class="wheel-preview-box">LIVE-FARBE</div>
             <canvas id="colorWheel" width="220" height="220"></canvas>
           </div>
+          
           <div class="sub-label"><span>☀️ Show-Helligkeit / Dunkelheit</span><span id="briText">100%</span></div>
           <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
           <div class="slider-hints"><span>0% (Dunkel)</span><span>100% (Max Hell)</span></div>
+
           <div class="sub-label"><span>💾 Farb-Slots (Tippen = Laden | 1 Sek. halten = Speichern)</span></div>
           <div class="slot-row" id="slotContainer"></div>
         </div>
+
         <div class="card">
-          <div class="card-title"><span>✨ 18 Show-Effekte (Übernehmen deine Farbe)</span></div>
+          <div class="card-title"><span>✨ 18 Show-Effekte (Inkl. Pop & Bang / Glitch)</span></div>
           <div class="grid" id="fxGrid"></div>
+
           <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
           <input type="range" id="spdSlider" min="1" max="100" value="50" oninput="onSpdSliderChange()">
           <div class="slider-hints"><span>1% (Sehr langsam)</span><span>100% (Sehr schnell)</span></div>
         </div>
+
         <div class="card">
-          <div class="card-title"><span>⏱️ Auto-Off Show-Timer</span><span id="timerCountdown" class="timer-badge">Aus</span></div>
+          <div class="card-title">
+            <span>⏱️ Auto-Off Show-Timer</span>
+            <span id="timerCountdown" class="timer-badge">Aus</span>
+          </div>
           <div class="sub-label"><span>Zeit bis zur Rückkehr auf Weiß</span><span id="tmrText">0 Min (Aus)</span></div>
           <input type="range" id="tmrSlider" min="0" max="60" value="0" oninput="onTimerSliderChange()" onchange="sendeTimerAufChip()">
           <div class="slider-hints"><span>Aus</span><span>15 Min</span><span>30 Min</span><span>60 Min</span></div>
@@ -193,30 +215,38 @@
       </div>
     </div>
 
+    <!-- TAB 2: STANDLICHT SETUP -->
     <div id="viewTfl" class="hidden">
       <div class="card">
         <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
+        
         <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
         <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange('TON')">
         <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
+
         <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit</span><span id="tagText">100%</span></div>
         <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange('TAG')">
         <div class="slider-hints"><span>0% (Aus)</span><span>100% (Max)</span></div>
+
         <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht</span><span id="nachtText">20%</span></div>
         <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange('NACHT')">
         <div class="slider-hints"><span>0% (Aus)</span><span>70% (Max)</span></div>
+
         <button class="btn btn-save" onclick="speichereTflAufChip()">💾 STANDLICHT IM CHIP SPEICHERN</button>
       </div>
     </div>
 
+    <!-- TAB 3: WELCOME-HOME UNTERREITER -->
     <div id="viewWel" class="hidden">
       <div class="card">
         <div class="card-title"><span>👋 Welcome-Home Animation (2s in Weiß)</span></div>
         <div class="sub-label"><span>Tippen = Vorschau abspielen (nur im Stand)</span></div>
         <div class="grid" id="welcomeGrid"></div>
+
         <button class="btn btn-save" onclick="speichereWelcomeAufChip()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
       </div>
     </div>
+
   </div>
 
 <script>
@@ -314,6 +344,9 @@
   function handleWheelTouch(e) {
     if (!gpsAktiv) return; e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches ? e.touches : e, x = touch.clientX - rect.left, y = touch.clientY - rect.top, dx = x - radius, dy = y - radius; if (dx * dx + dy * dy > radius * radius) return;
     const pixel = ctx.getImageData(x, y, 1, 1).data, r = pixel[0], g = pixel[1], b = pixel[2]; currentHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); currentRgbw = { r: r, g: g, b: b, w: 0 };
+    
+    // Färbt das Vorschau-Auge live ein
+    const p = document.getElementById('colorPreview'); if (p) { p.style.backgroundColor = currentHex; p.style.color = (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000' : '#fff'; }
     const now = Date.now(); if (now - lastSend > 65) { lastSend = now; if (activeFx === 0) { activeFx = 1; updateUI(); } senden("RGBW:" + r + "," + g + "," + b + ",0"); }
   }
 
@@ -329,7 +362,7 @@
     slots.forEach((s, idx) => {
       const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.style.backgroundColor = s.hex; btn.innerText = idx + 1;
       let pressTimer; btn.onpointerdown = () => { if (!gpsAktiv) return; pressTimer = setTimeout(() => { slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex }; localStorage.setItem('i20n_web_slots', JSON.stringify(slots)); renderSlots(); alert("Farbe auf Slot " + (idx + 1) + " gespeichert!"); }, 800); };
-      btn.onpointerup = () => clearTimeout(pressTimer); btn.onclick = () => { if (!gpsAktiv) return; currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; if (activeFx === 0) { activeFx = 1; updateUI(); } senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); };
+      btn.onpointerup = () => clearTimeout(pressTimer); btn.onclick = () => { if (!gpsAktiv) return; currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; const p = document.getElementById('colorPreview'); if (p) p.style.backgroundColor = s.hex; if (activeFx === 0) { activeFx = 1; updateUI(); } senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); };
       container.appendChild(btn);
     });
   }
