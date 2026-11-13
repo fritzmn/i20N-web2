@@ -723,8 +723,7 @@
       ctx.moveTo(radius, radius);
       ctx.arc(radius, radius, radius, startAngle, endAngle);
       ctx.closePath();
-      const grad = ctx.grad.addColorStop(1, "hsl(" + angle + ", 100%, 50%)");
-      (radius, radius, 0, radius, radius, radius);
+      const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
       grad.addColorStop(0, '#ffffff');
       grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)');
       ctx.fillStyle = grad;
