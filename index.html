@@ -353,7 +353,7 @@
     if (!bleChar) return;
     const rect = canvas.getBoundingClientRect();
     const x = clientX - rect.left;
-    const y = clientY - top = clientY - rect.top;
+    const y = clientY - rect.top;
     const dx = x - radius;
     const dy = y - radius;
     if (dx * dx + dy * dy > radius * radius) return;
