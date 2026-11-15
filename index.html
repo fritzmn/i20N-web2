@@ -160,7 +160,6 @@
 
   <div style="width: 100%; max-width: 400px;">
     
-    <!-- TAB 1: FARBRAD & EFFEKTE -->
     <div id="viewShow">
       <div id="lockBanner" class="lock-banner">
         🔒 Show-Farben & Effekte gesperrt: Bitte oben den GPS-Anfahrschutz einschalten! (Standlicht & Welcome sind frei einstellbar)
@@ -208,7 +207,6 @@
       </div>
     </div>
 
-    <!-- TAB 2: STANDLICHT SETUP -->
     <div id="viewTfl" class="hidden">
       <div class="card">
         <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
@@ -225,7 +223,6 @@
       </div>
     </div>
 
-    <!-- TAB 3: WELCOME-HOME REITER -->
     <div id="viewWel" class="hidden">
       <div class="card">
         <div class="card-title"><span>👋 Welcome-Home Animation (4s in Weiß)</span></div>
@@ -367,13 +364,13 @@
 
   canvas.addEventListener('touchstart', (e) => {
     isDragging = true;
-    if (e.touches.length > 0) { verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY); }
+    if (e.touches.length > 0) { verarbeiteEingabeKoordinate(e.touches.clientX, e.touches.clientY); }
   }, { passive: false });
 
   canvas.addEventListener('touchmove', (e) => {
     if (isDragging && e.touches.length > 0) {
       e.preventDefault();
-      verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY);
+      verarbeiteEingabeKoordinate(e.touches.clientX, e.touches.clientY);
     }
   }, { passive: false });
 
@@ -387,7 +384,16 @@
     slots.forEach((s, idx) => {
       const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.style.backgroundColor = s.hex; btn.innerText = idx + 1;
       let pressTimer; btn.onpointerdown = () => { pressTimer = setTimeout(() => { slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex }; localStorage.setItem('i20n_web_slots', JSON.stringify(slots)); renderSlots(); alert("Farbe gespeichert!"); }, 800); };
-      btn.onpointerup = () => clearTimeout(pressTimer); btn.onclick = () => { currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; const p = document.getElementById('colorPreview'); if (p) p.style.backgroundColor = s.hex; if (activeFx === 0) { activeFx = 1; updateUI(); } senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); };
+      btn.onpointerup = () => clearTimeout(pressTimer); 
+      
+      btn.onclick = () => { 
+        currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; 
+        currentHex = s.hex; 
+        const p = document.getElementById('colorPreview'); 
+        if (p) { p.style.backgroundColor = s.hex; p.style.color = (s.r*0.299 + s.g*0.587 + s.b*0.114) > 186 ? '#000' : '#fff'; }
+        if (activeFx === 0) { activeFx = 1; updateUI(); } 
+        senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); 
+      };
       container.appendChild(btn);
     });
   }
@@ -413,3 +419,4 @@
 </script>
 </body>
 </html>
+
