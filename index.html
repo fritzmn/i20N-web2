@@ -160,6 +160,7 @@
 
   <div style="width: 100%; max-width: 400px;">
     
+    <!-- TAB 1: FARBRAD & EFFEKTE -->
     <div id="viewShow">
       <div id="lockBanner" class="lock-banner">
         🔒 Show-Farben & Effekte gesperrt: Bitte oben den GPS-Anfahrschutz einschalten! (Standlicht & Welcome sind frei einstellbar)
@@ -207,6 +208,7 @@
       </div>
     </div>
 
+    <!-- TAB 2: STANDLICHT SETUP -->
     <div id="viewTfl" class="hidden">
       <div class="card">
         <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
@@ -223,9 +225,10 @@
       </div>
     </div>
 
+    <!-- TAB 3: WELCOME-HOME REITER -->
     <div id="viewWel" class="hidden">
       <div class="card">
-        <div class="card-title"><span>👋 Welcome-Home Animation (2s in Weiß)</span></div>
+        <div class="card-title"><span>👋 Welcome-Home Animation (4s in Weiß)</span></div>
         <div class="sub-label"><span>Tippen = Vorschau abspielen (nur im Stand)</span></div>
         <div class="grid" id="welcomeGrid"></div>
         <button class="btn btn-save" onclick="speichereWelcomeAufChip()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
@@ -247,7 +250,16 @@
   const savedTfl = JSON.parse(localStorage.getItem('i20n_web_tfl'));
   if (savedTfl) { tflTon = savedTfl.ton; tagHell = savedTfl.tag; nachtHell = Math.min(savedTfl.nacht, 70); if (savedTfl.wel) welcomeTyp = savedTfl.wel; }
 
-   const welcomeEffekte = [
+  const effekte = [
+    "🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer",
+    "🏎️ 5. Pace-Car Doppel", "✨ 6. Dreifach-Blitzer", "🚓 7. US-Polizei", "🚨 8. Rundumleuchte",
+    "🌅 9. Sanft Einblenden", "🌇 10. Sanft Ausblenden", "🕯️ 11. Kerzenflackern", "⛈️ 12. Gewitter / Blitz",
+    "🆘 13. SOS-Signal", "🏁 14. i20N Performance", "🌈 15. Regenbogen Sanft", "🎉 16. Farb-Sprung",
+    "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch", "⚡ 19. Highway Lichthupe", "🌋 20. Plasma & Magma",
+    "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Arcade Laser"
+  ];
+
+  const welcomeEffekte = [
     { id: 1, name: "🌅 1. Sanft Hochdimmen" },
     { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
     { id: 3, name: "💓 3. Herzschlag-Start" },
@@ -256,12 +268,6 @@
     { id: 6, name: "🌀 6. Hyper-Spool Fade" },
     { id: 7, name: "🏁 7. Track-Check Scanner" },
     { id: 8, name: "🚫 8. Aus (Sofort An)" }
-  ];
-
-
-  const welcomeEffekte = [
-    { id: 1, name: "🌅 1. Sanft Hochdimmen" }, { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
-    { id: 3, name: "💓 3. Herzschlag-Start" }, { id: 4, name: "✨ 4. Stufen-Zündung" }, { id: 5, name: "🚫 5. Aus (Sofort An)" }
   ];
 
   const btnFlash = document.getElementById('btnFlashHold');
@@ -387,7 +393,7 @@
   }
 
   function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { activeFx = id; updateUI(); senden("FX:" + id); }; grid.appendChild(btn); }); }
-  function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 5) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } if (gpsAktiv && aktuelleKmh >= 5) return; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("PARK"); await senden("WELTEST:" + item.id); }; grid.appendChild(btn); }); }
+  function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } if (gpsAktiv && aktuelleKmh >= 5) return; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("PARK"); await senden("WELTEST:" + item.id); }; grid.appendChild(btn); }); }
   async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
 
   function initTflSliders() { document.getElementById('tonSlider').value = tflTon; document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagSlider').value = tagHell; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtSlider').value = nachtHell; document.getElementById('nachtText').innerText = nachtHell + '%'; }
