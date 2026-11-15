@@ -236,7 +236,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 0.38</div>
+  <div class="version-footer">Ver. 0.39</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -291,6 +291,19 @@
 
   function onTimerSliderChange() { timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
   function senden(b) { if (!bleChar) return; let d = new TextEncoder().encode(b); try { if (bleChar.writeValueWithoutResponse) bleChar.writeValueWithoutResponse(d); else bleChar.writeValue(d); } catch (e) {} }
+
+  // REIN MATHEMATISCHE HSL-ZU-RGB KONVERTIERUNG (KRISE-SICHER)
+  function hslZuRgb(h, s, l) {
+    s /= 100; l /= 100;
+    let c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r = 0, g = 0, b = 0;
+    if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+    else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+    else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+    else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+    else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+    else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+    return { r: Math.round((r + m) * 255), g: Math.round((g + m) * 255), b: Math.round((b + m) * 255) };
+  }
 
   function sendeTimerAufChip() {
     senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown');
@@ -354,36 +367,43 @@
   }
   zeichneFarbrad();
 
+  // MATHEMATISCH ABSOLUT DIEBSSICHERE KOORDINATENBERECHNUNG (OHNE CANVAS-PIXEL-AUSLESEN)
   function verarbeiteEingabeKoordinate(x, y) {
     if (!bleChar) return;
     const dx = x - radius;
     const dy = y - radius;
-    if (dx * dx + dy * dy > radius * radius) return;
+    const distanz = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distanz > radius) return; // Außerhalb des Rades ignoriert
 
     lastX = x; lastY = y;
     zeichneFarbrad();
 
-    const targetX = Math.max(0, Math.min(canvas.width - 1, Math.floor(x)));
-    const targetY = Math.max(0, Math.min(canvas.height - 1, Math.floor(y)));
-    const pixel = ctx.getImageData(targetX, targetY, 1, 1).data;
-    
-    const r = pixel[0], g = pixel[1], b = pixel[2];
-    if (r === 0 && g === 0 && b === 0) return;
+    // Winkel berechnen (0 bis 360 Grad)
+    let winkel = Math.atan2(dy, dx) * (180 / Math.PI);
+    if (winkel < 0) winkel += 360;
 
-    currentHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    currentRgbw = { r: r, g: g, b: b, w: 0 };
+    // Sättigung bestimmen (Je weiter außen, desto satter die Farbe)
+    const saettigung = Math.min(100, Math.round((distanz / radius) * 100));
+    
+    // RGB direkt über Formel generieren statt Pixel zu lesen (iOS-Blackout behoben!)
+    const rgb = mantel = hslZuRgb(winkel, saettigung, 50);
+
+    currentHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+    currentRgbw = { r: rgb.r, g: rgb.g, b: rgb.b, w: 0 };
     
     const p = document.getElementById('colorPreview');
-    if (p) { p.style.backgroundColor = currentHex; p.style.color = (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000' : '#fff'; }
+    if (p) { p.style.backgroundColor = currentHex; p.style.color = (rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114) > 186 ? '#000' : '#fff'; }
     
     const now = Date.now();
     if (now - lastSend > 65) {
       lastSend = now;
       if (activeFx === 0) { activeFx = 1; updateUI(); }
-      senden("RGBW:" + r + "," + g + "," + b + ",0");
+      senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0");
     }
   }
 
+  let isDragging = false;
   canvas.addEventListener('mousedown', (e) => {
     isDragging = true;
     const rect = canvas.getBoundingClientRect();
@@ -462,4 +482,3 @@
 </script>
 </body>
 </html>
-
