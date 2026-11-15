@@ -237,6 +237,7 @@
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
   let tflTon = 60, tagHell = 100, nachtHell = 20, welcomeTyp = 1, currentHex = "#00a8e8", currentRgbw = { r: 0, g: 168, b: 232, w: 0 };
   let gpsAktiv = false, gpsWatchId = null, aktuelleKmh = 0, sollAutoReconnect = false, reconnectTimer = null, timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
+  let lastX = null, lastY = null; // Für das Fadenkreuz
 
   let slots = JSON.parse(localStorage.getItem('i20n_web_slots')) || [
     { r: 255, g: 0, b: 0, w: 0, hex: '#ff0000' }, { r: 0, g: 168, b: 232, w: 0, hex: '#00a8e8' },
@@ -329,7 +330,24 @@
   async function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); await senden("AUTO"); }
 
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
-  function zeichneFarbrad() { for (let angle = 0; angle < 360; angle++) { const startAngle = (angle - 2) * Math.PI / 180, endAngle = angle * Math.PI / 180; ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, startAngle, endAngle); ctx.closePath(); const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius); grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)'); ctx.fillStyle = grad; ctx.fill(); } }
+  
+  function zeichneFarbrad() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let angle = 0; angle < 360; angle++) {
+      const startAngle = (angle - 2) * Math.PI / 180, endAngle = angle * Math.PI / 180;
+      ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, startAngle, endAngle); ctx.closePath();
+      const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+      grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)');
+      ctx.fillStyle = grad; ctx.fill();
+    }
+    // Zeichnet das Fadenkreuz (Zielkreis), falls Koordinaten da sind
+    if (lastX !== null && lastY !== null) {
+      ctx.beginPath(); ctx.arc(lastX, lastY, 8, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.beginPath(); ctx.arc(lastX, lastY, 2, 0, 2 * Math.PI);
+      ctx.fillStyle = '#000000'; ctx.fill();
+    }
+  }
   zeichneFarbrad();
 
   function verarbeiteEingabeKoordinate(clientX, clientY) {
@@ -340,6 +358,10 @@
     const dx = x - radius;
     const dy = y - radius;
     if (dx * dx + dy * dy > radius * radius) return;
+
+    // Speicher den Punkt fürs Fadenkreuz und zeichne das Rad neu
+    lastX = x; lastY = y;
+    zeichneFarbrad();
 
     const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
     const r = pixel, g = pixel, b = pixel;
@@ -364,13 +386,13 @@
 
   canvas.addEventListener('touchstart', (e) => {
     isDragging = true;
-    if (e.touches.length > 0) { verarbeiteEingabeKoordinate(e.touches.clientX, e.touches.clientY); }
+    if (e.touches.length > 0) { verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY); }
   }, { passive: false });
 
   canvas.addEventListener('touchmove', (e) => {
     if (isDragging && e.touches.length > 0) {
       e.preventDefault();
-      verarbeiteEingabeKoordinate(e.touches.clientX, e.touches.clientY);
+      verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY);
     }
   }, { passive: false });
 
@@ -389,6 +411,8 @@
       btn.onclick = () => { 
         currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; 
         currentHex = s.hex; 
+        lastX = null; lastY = null; // Setzt Fadenkreuz beim Laden eines Slots zurück
+        zeichneFarbrad();
         const p = document.getElementById('colorPreview'); 
         if (p) { p.style.backgroundColor = s.hex; p.style.color = (s.r*0.299 + s.g*0.587 + s.b*0.114) > 186 ? '#000' : '#fff'; }
         if (activeFx === 0) { activeFx = 1; updateUI(); } 
@@ -419,4 +443,3 @@
 </script>
 </body>
 </html>
-
