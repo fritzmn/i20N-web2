@@ -247,14 +247,17 @@
   const savedTfl = JSON.parse(localStorage.getItem('i20n_web_tfl'));
   if (savedTfl) { tflTon = savedTfl.ton; tagHell = savedTfl.tag; nachtHell = Math.min(savedTfl.nacht, 70); if (savedTfl.wel) welcomeTyp = savedTfl.wel; }
 
-  const effekte = [
-    "🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer",
-    "🏎️ 5. Pace-Car Doppel", "✨ 6. Dreifach-Blitzer", "🚓 7. US-Polizei", "🚨 8. Rundumleuchte",
-    "🌅 9. Sanft Einblenden", "🌇 10. Sanft Ausblenden", "🕯️ 11. Kerzenflackern", "⛈️ 12. Gewitter / Blitz",
-    "🆘 13. SOS-Signal", "🏁 14. i20N Performance", "🌈 15. Regenbogen Sanft", "🎉 16. Farb-Sprung",
-    "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch", "⚡ 19. Highway Lichthupe", "🌋 20. Plasma & Magma",
-    "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Arcade Laser"
+   const welcomeEffekte = [
+    { id: 1, name: "🌅 1. Sanft Hochdimmen" },
+    { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
+    { id: 3, name: "💓 3. Herzschlag-Start" },
+    { id: 4, name: "✨ 4. Stufen-Zündung" },
+    { id: 5, name: "💥 5. Triple-Threat Pulse" },
+    { id: 6, name: "🌀 6. Hyper-Spool Fade" },
+    { id: 7, name: "🏁 7. Track-Check Scanner" },
+    { id: 8, name: "🚫 8. Aus (Sofort An)" }
   ];
+
 
   const welcomeEffekte = [
     { id: 1, name: "🌅 1. Sanft Hochdimmen" }, { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
