@@ -190,7 +190,7 @@
         </div>
 
         <div class="card">
-          <div class="card-title"><span>✨ 24 Show-Effekte (Inkl. Pop & Bang / Glitch)</span></div>
+          <div class="card-title"><span>✨ 24 Show-Effekte (Übernehmen deine Farbe)</span></div>
           <div class="grid" id="fxGrid"></div>
 
           <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
@@ -237,7 +237,7 @@
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
   let tflTon = 60, tagHell = 100, nachtHell = 20, welcomeTyp = 1, currentHex = "#00a8e8", currentRgbw = { r: 0, g: 168, b: 232, w: 0 };
   let gpsAktiv = false, gpsWatchId = null, aktuelleKmh = 0, sollAutoReconnect = false, reconnectTimer = null, timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
-  let lastX = null, lastY = null; // Für das Fadenkreuz
+  let lastX = null, lastY = null;
 
   let slots = JSON.parse(localStorage.getItem('i20n_web_slots')) || [
     { r: 255, g: 0, b: 0, w: 0, hex: '#ff0000' }, { r: 0, g: 168, b: 232, w: 0, hex: '#00a8e8' },
@@ -340,7 +340,6 @@
       grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)');
       ctx.fillStyle = grad; ctx.fill();
     }
-    // Zeichnet das Fadenkreuz (Zielkreis), falls Koordinaten da sind
     if (lastX !== null && lastY !== null) {
       ctx.beginPath(); ctx.arc(lastX, lastY, 8, 0, 2 * Math.PI);
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
@@ -354,17 +353,16 @@
     if (!bleChar) return;
     const rect = canvas.getBoundingClientRect();
     const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const y = clientY - top = clientY - rect.top;
     const dx = x - radius;
     const dy = y - radius;
     if (dx * dx + dy * dy > radius * radius) return;
 
-    // Speicher den Punkt fürs Fadenkreuz und zeichne das Rad neu
     lastX = x; lastY = y;
     zeichneFarbrad();
 
     const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-    const r = pixel, g = pixel, b = pixel;
+    const r = pixel[0], g = pixel[1], b = pixel[2];
     currentHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     currentRgbw = { r: r, g: g, b: b, w: 0 };
     
@@ -386,11 +384,11 @@
 
   canvas.addEventListener('touchstart', (e) => {
     isDragging = true;
-    if (e.touches.length > 0) { verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY); }
+    if (e.touches && e.touches.length > 0) { verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY); }
   }, { passive: false });
 
   canvas.addEventListener('touchmove', (e) => {
-    if (isDragging && e.touches.length > 0) {
+    if (isDragging && e.touches && e.touches.length > 0) {
       e.preventDefault();
       verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY);
     }
@@ -411,7 +409,7 @@
       btn.onclick = () => { 
         currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; 
         currentHex = s.hex; 
-        lastX = null; lastY = null; // Setzt Fadenkreuz beim Laden eines Slots zurück
+        lastX = null; lastY = null;
         zeichneFarbrad();
         const p = document.getElementById('colorPreview'); 
         if (p) { p.style.backgroundColor = s.hex; p.style.color = (s.r*0.299 + s.g*0.587 + s.b*0.114) > 186 ? '#000' : '#fff'; }
