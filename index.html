@@ -236,7 +236,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 0.36</div>
+  <div class="version-footer">Ver. 0.38</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -354,14 +354,8 @@
   }
   zeichneFarbrad();
 
-  function verarbeiteEingabeKoordinate(clientX, clientY) {
+  function verarbeiteEingabeKoordinate(x, y) {
     if (!bleChar) return;
-    const rect = canvas.getBoundingClientRect();
-    
-    // MATHEMATISCH SCHARFE IPHONE-TOUCH-BERECHNUNG
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
-    
     const dx = x - radius;
     const dy = y - radius;
     if (dx * dx + dy * dy > radius * radius) return;
@@ -369,13 +363,12 @@
     lastX = x; lastY = y;
     zeichneFarbrad();
 
-    // Verhindert das Auslesen von Out-of-Bounds Rändern (0,0,0 Blackout-Schutz)
     const targetX = Math.max(0, Math.min(canvas.width - 1, Math.floor(x)));
     const targetY = Math.max(0, Math.min(canvas.height - 1, Math.floor(y)));
     const pixel = ctx.getImageData(targetX, targetY, 1, 1).data;
     
     const r = pixel[0], g = pixel[1], b = pixel[2];
-    if (r === 0 && g === 0 && b === 0) return; // Ignoriert fehlerhafte Schwarz-Messungen
+    if (r === 0 && g === 0 && b === 0) return;
 
     currentHex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     currentRgbw = { r: r, g: g, b: b, w: 0 };
@@ -391,20 +384,34 @@
     }
   }
 
-  let isDragging = false;
-  canvas.addEventListener('mousedown', (e) => { isDragging = true; verarbeiteEingabeKoordinate(e.clientX, e.clientY); });
-  canvas.addEventListener('mousemove', (e) => { if (isDragging) verarbeiteEingabeKoordinate(e.clientX, e.clientY); });
+  canvas.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    const rect = canvas.getBoundingClientRect();
+    verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top);
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      const rect = canvas.getBoundingClientRect();
+      verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top);
+    }
+  });
   window.addEventListener('mouseup', () => isDragging = false);
 
   canvas.addEventListener('touchstart', (e) => {
     isDragging = true;
-    if (e.touches && e.touches.length > 0) { verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY); }
+    if (e.touches && e.touches.length > 0) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY));
+    }
   }, { passive: false });
 
   canvas.addEventListener('touchmove', (e) => {
     if (isDragging && e.touches && e.touches.length > 0) {
       e.preventDefault();
-      verarbeiteEingabeKoordinate(e.touches[0].clientX, e.touches[0].clientY);
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY));
     }
   }, { passive: false });
 
@@ -455,3 +462,4 @@
 </script>
 </body>
 </html>
+
