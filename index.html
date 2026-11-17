@@ -41,7 +41,6 @@
     .btn-connect { background: linear-gradient(135deg, #00b4d8 0%, #005f99 100%); margin-bottom: 10px; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.35); }
     .btn-auto { background: linear-gradient(135deg, #38b000 0%, #007200 100%); font-size: 15px; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(56, 176, 0, 0.35); }
     .btn-save { background: linear-gradient(135deg, #2ec4b6 0%, #1b8a5a 100%); margin-top: 18px; box-shadow: 0 4px 14px rgba(46, 196, 182, 0.35); }
-    .btn-calib { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); font-size: 13px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
     .btn-gprotect { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; box-shadow: 0 4px 14px rgba(239, 35, 60, 0.35); }
     .btn-gprotect.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; box-shadow: 0 4px 14px rgba(0, 150, 199, 0.4); }
     .active-border { outline: 2px solid #ffffff; }
@@ -60,21 +59,20 @@
     .g-item { text-align: center; }
     .g-label { font-size: 11px; color: var(--sub); font-weight: 700; display: block; margin-bottom: 4px; }
     .g-val { font-size: 18px; font-weight: 900; color: #ffffff; font-style: italic; }
-    .slot-row { display: flex; justify-content: space-between; margin-top: 10px; }
-    .slot-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.85); font-weight: 900; color: #fff; text-shadow: 0 1px 4px #000; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); transition: 0.12s; }
-    .slot-btn:active { transform: scale(0.92); }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-    .btn-fx { background: linear-gradient(145deg, #2b313d 0%, #1c2028 100%); border: 1px solid rgba(255, 255, 255, 0.09); padding: 13px 8px; border-radius: 11px; font-size: 12px; font-weight: 700; text-align: left; padding-left: 11px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); }
+    .btn-fx { background: linear-gradient(145deg, #2b313d 0%, #1c2028 100%); border: 1px solid rgba(255, 255, 255, 0.09); padding: 13px 8px; border-radius: 11px; font-size: 12px; font-weight: 700; text-align: left; padding-left: 11px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); color:white;}
     .btn-fx.active { background: linear-gradient(135deg, #00b4d8 0%, #e63946 100%); border: 1px solid #ffffff; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.45); }
     .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 600; }
     input[type="range"] { -webkit-appearance: none; width: 100%; height: 11px; border-radius: 6px; background: linear-gradient(90deg, #1f242d 0%, #343c4a 100%); border: 1px solid rgba(255,255,255,0.08); outline: none; margin: 8px 0 4px 0; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 25px; height: 25px; border-radius: 50%; background: linear-gradient(135deg, #ffffff 0%, #d8e2dc 100%); border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 168, 232, 0.6); }
     #tonSlider { background: linear-gradient(90deg, #ffd166 0%, #ffffff 50%, #4cc9f0 100%); }
     #briSlider { background: linear-gradient(90deg, #161920 0%, #00b4d8 50%, #ffffff 100%); }
+    #tmrSlider { background: linear-gradient(90deg, #2b313d 0%, #7209b7 50%, #e63946 100%); }
     .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #7a8594; margin-bottom: 6px; font-weight: 500; }
+    .timer-badge { background: linear-gradient(135deg, #252a34 0%, #181b22 100%); padding: 4px 10px; border-radius: 8px; font-size: 12px; color: var(--nblue); font-weight: 800; border: 1px solid rgba(0, 168, 232, 0.3); }
+    .timer-badge.running { background: linear-gradient(135deg, rgba(230, 57, 70, 0.35) 0%, rgba(155, 11, 29, 0.45) 100%); color: #ffccd5; border: 1px solid var(--nred); }
     .hidden { display: none; }
     .version-footer { position: absolute; bottom: 8px; right: 12px; font-size: 10px; color: #4a5464; font-weight: 600; letter-spacing: 0.5px; }
-    
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
     .modal-box { background: linear-gradient(145deg, #1d222b 0%, #11141a 100%); border: 2px solid var(--nred); border-radius: 20px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 10px 30px rgba(230,57,70,0.3); text-align: center; }
     .modal-title { font-size: 20px; font-weight: 900; color: var(--nred); letter-spacing: 1px; margin-bottom: 14px; text-transform: uppercase; font-style: italic; }
@@ -130,6 +128,11 @@
         </div>
 
         <div class="card">
+          <div class="card-title"><span>🕹️ Live-Trigger</span></div>
+          <button id="btnFlashHold" class="btn btn-flash">⚡ FLASH HOLD <span style="font-size:11px; font-weight:normal;">(Gedrückt halten)</span></button>
+        </div>
+
+        <div class="card">
           <div class="card-title"><span>🎨 Freies Farbrad</span></div>
           <div class="wheel-wrap">
             <div id="colorPreview" class="wheel-preview-box">LIVE-FARBE</div>
@@ -139,9 +142,16 @@
           <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
         </div>
 
-        <div class="card">
-          <div class="card-title"><span>✨ Show-Effekte</span></div>
+        <div id="fxContainerCard" class="card">
+          <div class="card-title"><span>✨ 24 Show-Effekte</span></div>
           <div class="grid" id="fxGrid"></div>
+        </div>
+
+        <div id="timerContainerCard" class="card">
+          <div class="card-title"><span>⏱️ Auto-Off Show-Timer</span><span id="timerCountdown" class="timer-badge">Aus</span></div>
+          <div class="sub-label"><span>Zeit bis zur Rückkehr auf Weiß</span><span id="tmrText">0 Min (Aus)</span></div>
+          <input type="range" id="tmrSlider" min="0" max="60" value="0" oninput="onTimerSliderChange()" onchange="sendeTimerAufChip()">
+          <div class="slider-hints"><span>Aus</span><span>15 Min</span><span>30 Min</span><span>60 Min</span></div>
         </div>
       </div>
     </div>
@@ -152,8 +162,10 @@
         <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
         <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange()">
         <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
-        <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit</span><span id="tagText">100%</span></div>
+        <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit (Tag)</span><span id="tagText">100%</span></div>
         <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange()">
+        <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht (Nacht)</span><span id="nachtText">20%</span></div>
+        <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange()">
         <button class="btn" style="background:var(--green); margin-top:18px;" onclick="speichereTfl()">💾 STANDLICHT IM CHIP SPEICHERN</button>
       </div>
     </div>
@@ -167,13 +179,21 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 2.10</div>
+  <div class="version-footer">Ver. 2.20</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
   let gforceProtectAktiv = false, lastX = null, lastY = null;
+  let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
 
-  const effekte = ["🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer"];
+  const effekte = [
+    "🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer",
+    "🏎️ 5. Pace-Car Doppel", "✨ 6. Dreifach-Blitzer", "🚓 7. US-Polizei", "🚨 8. Rundumleuchte",
+    "🌅 9. Sanft Einblenden", "🌇 10. Sanft Ausblenden", "🕯️ 11. Kerzenflackern", "⛈️ 12. Gewitter / Blitz",
+    "🆘 13. SOS-Signal", "🏁 14. i20N Performance", "🌈 15. Regenbogen Sanft", "🎉 16. Farb-Sprung",
+    "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch", "⚡ 19. Highway Lichthupe", "🌋 20. Plasma & Magma",
+    "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Laser"
+  ];
   const welEffekte = ["🌅 1. Sanft Hochdimmen", "⚡ 2. Doppel-Blitz & Dim", "🚫 8. Aus (Sofort An)"];
 
   function verarbeiteChipDaten(msg) {
@@ -195,7 +215,7 @@
       document.getElementById('lockBanner').classList.add('hidden');
       senden("G_PROT:1");
     } else {
-      btn.classList.remove('active'); btn.innerText = "🔒 G-Kraft-Schutz AUS";
+      btn.classList.remove('active'); btn.innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
       document.getElementById('showContent').classList.add('locked');
       document.getElementById('lockBanner').classList.remove('hidden');
       senden("G_PROT:0");
@@ -215,7 +235,16 @@
     } catch (err) { document.getElementById('status').innerText = "❌ Fehler"; }
   }
 
-  function aktiviereAuto() { senden("AUTO"); }
+  function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); senden("AUTO"); }
+
+  const btnFlash = document.getElementById('btnFlashHold');
+  const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
+  const stopFlash = (e) => { if (e) e.preventDefault(); btnFlash.classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
+  btnFlash.addEventListener('pointerdown', startFlash); btnFlash.addEventListener('pointerup', stopFlash); btnFlash.addEventListener('pointerleave', stopFlash); btnFlash.addEventListener('pointercancel', stopFlash);
+
+  function onTimerSliderChange() { timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
+  function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
+  function stoppeTimerUi() { if (timerUiInterval) clearInterval(timerUiInterval); timerMinuten = 0; document.getElementById('tmrSlider').value = 0; document.getElementById('tmrText').innerText = "0 Min (Aus)"; const badge = document.getElementById('timerCountdown'); badge.innerText = "Aus"; badge.classList.remove('running'); }
 
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
   function zeichneFarbrad() {
@@ -265,24 +294,25 @@
   function bTflMix(t) { return { r: t<50 ? 255 : Math.round(255-(110*(t-50)/50)), g: t<50 ? Math.round(180+75*(t/50)) : Math.round(255-20*(t-50)/50), b: t<50 ? Math.round(60+195*(t/50)) : 255, w: 255 }; }
 
   function onTflSliderChange() {
-    let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value);
-    document.getElementById('tonText').innerText = ton+"%"; document.getElementById('tagText').innerText = tag+"%";
+    let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value), nacht = parseInt(document.getElementById('nachtSlider').value);
+    document.getElementById('tonText').innerText = ton+"%"; document.getElementById('tagText').innerText = tag+"%"; document.getElementById('nachtText').innerText = nacht+"%";
     let mix = bTflMix(ton), f = tag/100;
     let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW_TFL:" + Math.round(mix.r*f) + "," + Math.round(mix.g*f) + "," + Math.round(mix.b*f) + "," + Math.round(mix.w*f)); }
   }
 
   function speichereTfl() {
-    let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value);
-    let mix = bTflMix(ton), tagVal = Math.round((tag/100)*255);
-    senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + ",55");
-    alert("Standlicht im Speicher abgelegt!");
+    let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value), nacht = parseInt(document.getElementById('nachtSlider').value);
+    let mix = bTflMix(ton), tagVal = Math.round((tag/100)*255), nachtVal = Math.round((nacht/100)*255);
+    senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal);
+    localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: ton, tag: tag, nacht: nacht, wel: welcomeTyp }));
+    alert("Standlicht-Konfiguration im Flash-Speicher hinterlegt!");
   }
 
   function renderFx() {
     const g = document.getElementById('fxGrid'); g.innerHTML = '';
     effekte.forEach((name, i) => {
       let b = document.createElement('button'); b.className = 'btn btn-fx'; b.innerText = name;
-      b.onclick = () => { senden("FX:"+(i+1)); }; g.appendChild(b);
+      b.onclick = () => { activeFx = (i+1); updateUI(); senden("FX:"+(i+1)); }; g.appendChild(b);
     });
   }
   
@@ -304,9 +334,20 @@
     document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
   }
 
+  function updateUI() {
+    document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : '');
+    const buttons = document.querySelectorAll('#fxGrid .btn-fx');
+    buttons.forEach((b, i) => {
+      if (activeFx === (i+1)) b.classList.add('active');
+      else b.classList.remove('active');
+    });
+  }
+
   function onBriSliderChange() { let b = document.getElementById('briSlider').value; document.getElementById('briText').innerText = b+"%"; senden("BRI:"+b); }
 
   renderFx(); renderWelcome();
-</script>
+</style>
+</head>
+<body>
 </body>
 </html>
