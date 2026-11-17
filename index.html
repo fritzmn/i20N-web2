@@ -48,7 +48,7 @@
     .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); width: 100%; }
     .btn-flash.pressing { background: #ffffff; color: #000000; text-shadow: none; }
     
-    .locked { opacity: 0.32; filter: grayscale(85%); }
+    .locked { opacity: 0.32; pointer-events: none; filter: grayscale(85%); }
     .lock-banner { background: linear-gradient(135deg, rgba(230, 57, 70, 0.22) 0%, rgba(155, 11, 29, 0.25) 100%); border: 1px solid var(--nred); color: #ffccd5; padding: 11px; border-radius: 12px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; }
     .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
@@ -120,7 +120,7 @@
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
     <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
+    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
@@ -203,7 +203,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 0.53</div>
+  <div class="version-footer">Ver. 0.54</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -254,7 +254,6 @@
     }
   }
 
-  // FIX VER. 0.53: Übernimmt beim Deaktivieren SOFORT die weiße Standlichtfarbe vom Chip
   function toggleGforceProtect() {
     if (!gforceProtectAktiv) {
       gforceProtectAktiv = true;
@@ -317,7 +316,15 @@
     } catch (err) { document.getElementById('status').innerText = "❌ Fehler: " + err.message; }
   }
 
-  async function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); await senden("AUTO"); }
+  // FIX VER. 0.54: Erzwingt jetzt hart und augenblicklich das Senden des AUTO-Befehls an den Chip!
+  async function aktiviereAuto() { 
+    activeFx = 0; 
+    stoppeTimerUi(); 
+    updateUI(); 
+    if (bleChar) {
+      await senden("AUTO");
+    }
+  }
 
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
   function zeichneFarbrad() { ctx.clearRect(0,0,canvas.width,canvas.height); for (let angle = 0; angle < 360; angle++) { const startAngle = (angle - 2) * Math.PI / 180, endAngle = angle * Math.PI / 180; ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, startAngle, endAngle); ctx.closePath(); const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius); grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)'); ctx.fillStyle = grad; ctx.fill(); } if (lastX !== null && lastY !== null) { ctx.beginPath(); ctx.arc(lastX, lastY, 8, 0, 2 * Math.PI); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke(); ctx.beginPath(); ctx.arc(lastX, lastY, 2, 0, 2 * Math.PI); ctx.fillStyle = '#000000'; ctx.fill(); } }
