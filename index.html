@@ -48,8 +48,9 @@
     .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); width: 100%; }
     .btn-flash.pressing { background: #ffffff; color: #000000; text-shadow: none; }
     
-    /* NEUES SPEZIAL-CSS: Farbrad & Standlicht ignorieren die Sperre im Stand völlig */
-    .fx-locked { opacity: 0.35; pointer-events: none; filter: grayscale(85%); }
+    /* FIX: Sperre graut NUR noch die Effekt-Box aus, blockiert aber KEINE Klicks oder das Farbrad mehr */
+    .fx-locked { opacity: 0.35; filter: grayscale(85%); }
+    
     .lock-banner { background: linear-gradient(135deg, rgba(230, 57, 70, 0.22) 0%, rgba(155, 11, 29, 0.25) 100%); border: 1px solid var(--nred); color: #ffccd5; padding: 11px; border-radius: 12px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; }
     .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
@@ -121,14 +122,14 @@
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
     <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
+    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
     
     <div id="viewShow">
-      <div id="lockBanner" class="lock-banner">
-        🔒 Show-Farben & Effekte gesperrt: Bitte oben den G-Kraft-Schutz für den Show-Modus einschalten! (Standlicht & Welcome sind frei einstellbar)
+      <div id="lockBanner" class="lock-banner hidden">
+        🔒 Show-Modus aktiv: Bei Bewegung schaltet das System automatisch auf legales Weiß!
       </div>
 
       <div id="showContent">
@@ -204,7 +205,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 0.47</div>
+  <div class="version-footer">Ver. 0.48</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -266,7 +267,7 @@
       document.getElementById('btnGprotect').classList.remove('active');
       document.getElementById('gLabel').innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
       document.getElementById('gState').innerText = "🚫 Inaktiv";
-      setzeShowSperre(true);
+      setzeShowSperre(false); // Macht alles wieder komplett frei frei
       senden("G_PROT:0");
       aktiviereAuto();
     }
@@ -284,7 +285,7 @@
   function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
   function stoppeTimerUi() { if (timerUiInterval) clearInterval(timerUiInterval); timerMinuten = 0; document.getElementById('tmrSlider').value = 0; document.getElementById('tmrText').innerText = "0 Min (Aus)"; const badge = document.getElementById('timerCountdown'); badge.innerText = "Aus"; badge.classList.remove('running'); }
   
-  /* FIX VER 0.47: Sperrt nur noch gezielt die Effektlisten-Karten, lässt das Farbrad im CSS unberührt! */
+  /* FIX: Graut NUR die Effektlisten-Karten aus, lässt Farbrad und Slider immer frei berührbar! */
   function setzeShowSperre(g) { 
     const banner = document.getElementById('lockBanner');
     const card1 = document.getElementById('fxContainerCard');
@@ -305,7 +306,7 @@
       bleChar.startNotifications().then(() => { bleChar.addEventListener('characteristicvaluechanged', (e) => { let s = new TextDecoder().decode(e.target.value); verarbeiteChipDaten(s); }); });
     } catch (e) { bleChar = null; }
   }
-  function starteAutoReconnectSchleife() { if (reconnectTimer) clearInterval(reconnectTimer); reconnectTimer = setInterval(async () => { if (bleDevice && !bleDevice.gatt.connected) { document.getElementById('status').innerText = "🔄 Suche Scheinwerfer..."; document.getElementById('status').style.color = "#00b4d8"; await gattVerbinden(); } }, 3500); }
+  function starteAutoReconnectSchleife() { if (reconnectTimer) reconnectTimer = setInterval(async () => { if (bleDevice && !bleDevice.gatt.connected) { document.getElementById('status').innerText = "🔄 Suche Scheinwerfer..."; document.getElementById('status').style.color = "#00b4d8"; await gattVerbinden(); } }, 3500); }
 
   async function verbinden() {
     try {
@@ -366,7 +367,6 @@
   function wechselTab(z) { document.getElementById('viewShow').className = z === 'SHOW' ? '' : 'hidden'; document.getElementById('viewTfl').className = z === 'TFL' ? '' : 'hidden'; document.getElementById('viewWel').className = z === 'WEL' ? '' : 'hidden'; document.getElementById('tabShow').className = 'tab-btn' + (z === 'SHOW' ? ' tab-active' : ''); document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : ''); document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : ''); }
   function updateUI() { document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : ''); renderEffekte(); }
 
-  // FIX VER 0.47: Ruft die im Code existierende bTflMix-Funktion fehlerfrei auf!
   function onTflSliderChange(q) { 
     tflTon = parseInt(document.getElementById('tonSlider').value); tagHell = parseInt(document.getElementById('tagSlider').value); nachtHell = parseInt(document.getElementById('nachtSlider').value); document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtText').innerText = nachtHell + '%'; 
     const now = Date.now(); if (now - lastSend > 65) { lastSend = now; const mix = bTflMix(tflTon), f = (q === 'NACHT' ? nachtHell : tagHell) / 100; senden("RGBW_TFL:" + Math.round(mix.r * f) + "," + Math.round(mix.g * f) + "," + Math.round(mix.b * f) + "," + Math.round(mix.w * f)); } 
@@ -374,8 +374,8 @@
   
   async function speichereTflAufChip() { if (!bleChar) return; const mix = bTflMix(tflTon), tagVal = Math.round((tagHell / 100) * 255), nachtVal = Math.round((nachtHell / 100) * 255); await senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); activeFx = 0; stoppeTimerUi(); updateUI(); alert("Standlicht gespeichert!"); }
 
-  // Init-Aufrufe steuern
-  setzeShowSperre(true); renderSlots(); renderEffekte(); renderWelcomeEffekte(); initTflSliders();
+  // FIX: Keine harten Start-Sperren im Script, das UI bleibt im Stand voll empfänglich!
+  renderSlots(); renderEffekte(); renderWelcomeEffekte(); initTflSliders();
 </script>
 </body>
 </html>
