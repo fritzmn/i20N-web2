@@ -203,7 +203,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.00</div>
+  <div class="version-footer">Ver. 1.01</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -269,7 +269,7 @@
       document.getElementById('gLabel').innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
       document.getElementById('gState').innerText = "🚫 Inaktiv";
       setzeShowSperre(true);
-      senden("G_PROT:0"); // Der Chip setzt im Setup bei G_PROT:0 den Modus automatisch auf 0 (Weiß) zurück!
+      senden("G_PROT:0"); 
     }
   }
 
@@ -368,11 +368,20 @@
   function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } blockiereSensorsignale = true; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("WELTEST:" + item.id); setTimeout(() => { blockiereSensorsignale = false; }, 1500); }; grid.appendChild(btn); }); }
   async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
   function initTflSliders() { document.getElementById('tonSlider').value = tflTon; document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagSlider').value = tagHell; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtSlider').value = nachtHell; document.getElementById('nachtText').innerText = nachtHell + '%'; }
-  function bTflMix(t) { return { r: Math.round((t / 100) * 15), g: Math.round((t / 100) * 70), b: Math.round((t / 100) * 180), w: 255 }; }
   
-  function wechselTab(z) { document.getElementById('viewShow').className = z === 'SHOW' ? '' : 'hidden'; document.getElementById('viewTfl').className = z === 'TFL' ? '' : 'hidden'; document.getElementById('viewWel').className = z === 'WEL' ? '' : 'hidden'; document.getElementById('tabShow').className = 'tab-btn' + (z === 'SHOW' ? ' tab-active' : ''); document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : ''); document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : ''); }
-  function updateUI() { document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : ''); renderEffekte(); }
-
+  // FIX VER 1.01: Saubere mathematische Farbmischung für echten Kalt-/Warmweißton
+  function bTflMix(t) { 
+    let r = 0, g = 0, b = 0;
+    if (t < 50) {
+      let f = t / 50.0;
+      r = 255; g = Math.round(180 + (75 * f)); b = Math.round(60 + (195 * f));
+    } else {
+      let f = (t - 50) / 50.0;
+      r = Math.round(255 - (110 * f)); g = Math.round(255 - (20 * f)); b = 255;
+    }
+    return { r: r, g: g, b: b, w: 255 }; 
+  }
+  
   function onTflSliderChange(q) { 
     blockiereSensorsignale = true;
     tflTon = parseInt(document.getElementById('tonSlider').value); tagHell = parseInt(document.getElementById('tagSlider').value); nachtHell = parseInt(document.getElementById('nachtSlider').value); document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtText').innerText = nachtHell + '%'; 
@@ -382,7 +391,6 @@
   
   async function speichereTflAufChip() { if (!bleChar) return; const mix = bTflMix(tflTon), tagVal = Math.round((tagHell / 100) * 255), nachtVal = Math.round((nachtHell / 100) * 255); await senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); activeFx = 0; stoppeTimerUi(); updateUI(); alert("Standlicht gespeichert!"); }
 
-  // Initialisieren
   setzeShowSperre(true); renderSlots(); renderEffekte(); renderWelcomeEffekte(); initTflSliders();
 </script>
 </body>
