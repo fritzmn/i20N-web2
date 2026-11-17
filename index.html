@@ -48,7 +48,7 @@
     .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); width: 100%; }
     .btn-flash.pressing { background: #ffffff; color: #000000; text-shadow: none; }
     
-    .fx-locked { opacity: 0.35; }
+    .locked { opacity: 0.32; filter: grayscale(85%); }
     .lock-banner { background: linear-gradient(135deg, rgba(230, 57, 70, 0.22) 0%, rgba(155, 11, 29, 0.25) 100%); border: 1px solid var(--nred); color: #ffccd5; padding: 11px; border-radius: 12px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; }
     .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
@@ -126,11 +126,11 @@
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
     
     <div id="viewShow">
-      <div id="lockBanner" class="lock-banner hidden">
-        🔒 Show-Modus aktiv: Bei Bewegung schaltet das System automatisch auf legales Weiß!
+      <div id="lockBanner" class="lock-banner">
+        🔒 Show-Farben & Effekte gesperrt: Bitte oben den G-Kraft-Schutz für den Show-Modus einschalten! (Standlicht & Welcome sind frei einstellbar)
       </div>
 
-      <div id="showContent">
+      <div id="showContent" class="locked">
         <div class="card">
           <div class="card-title"><span>🏁 Telemetrie / G-Force Werte</span></div>
           <div class="g-box">
@@ -203,7 +203,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 0.51</div>
+  <div class="version-footer">Ver. 0.52</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -211,7 +211,7 @@
   let gforceProtectAktiv = false, reconnectTimer = null, timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
   let lastX = null, lastY = null;
   let curGX = 0.0, curGY = 0.0;
-  let blockiereSensorsignale = false; // FIX VER. 0.51: Verhindert, dass Sensordaten Einstellungen überschreiben
+  let blockiereSensorsignale = false;
 
   let slots = JSON.parse(localStorage.getItem('i20n_web_slots')) || [
     { r: 255, g: 0, b: 0, w: 0, hex: '#ff0000' }, { r: 0, g: 168, b: 232, w: 0, hex: '#00a8e8' },
@@ -248,7 +248,6 @@
       document.getElementById('valGY').innerText = curGY.toFixed(2) + " G";
     }
     else if(datenString == "FORCE_AUTO") {
-      // Nur ausführen, wenn der Nutzer nicht gerade händisch etwas regelt
       if (!blockiereSensorsignale) {
         activeFx = 0; stoppeTimerUi(); updateUI();
       }
@@ -269,13 +268,13 @@
       document.getElementById('btnGprotect').classList.remove('active');
       document.getElementById('gLabel').innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
       document.getElementById('gState').innerText = "🚫 Inaktiv";
-      setzeShowSperre(false);
+      setzeShowSperre(true); // Schließt die harte Sperre wieder
       senden("G_PROT:0");
-      aktiviereAuto();
+      aktiviereAuto(); // Zwingt LEDs sofort zurück auf Weiß
     }
   }
 
-  function sendeKalibrierung() { if(confirm("Auto steht absolut eben im Stillstand?")) senden("CALIB"); }
+  function SendeKalibrierung() { if(confirm("Auto steht absolut eben im Stillstand?")) senden("CALIB"); }
 
   const btnFlash = document.getElementById('btnFlashHold');
   const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
@@ -284,17 +283,16 @@
 
   function onTimerSliderChange() { timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
   function senden(b) { if (!bleChar) return; let d = new TextEncoder().encode(b); try { if (bleChar.writeValueWithoutResponse) bleChar.writeValueWithoutResponse(d); else bleChar.writeValue(d); } catch (e) {} }
-  function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
+  function SendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
   function stoppeTimerUi() { if (timerUiInterval) clearInterval(timerUiInterval); timerMinuten = 0; document.getElementById('tmrSlider').value = 0; document.getElementById('tmrText').innerText = "0 Min (Aus)"; const badge = document.getElementById('timerCountdown'); badge.innerText = "Aus"; badge.classList.remove('running'); }
   
   function setzeShowSperre(g) { 
     const banner = document.getElementById('lockBanner');
-    const card1 = document.getElementById('fxContainerCard');
-    const card2 = document.getElementById('timerContainerCard');
+    const content = document.getElementById('showContent');
     if (g) { 
-      card1.classList.add('fx-locked'); card2.classList.add('fx-locked'); banner.classList.remove('hidden'); 
+      content.classList.add('locked'); banner.classList.remove('hidden'); 
     } else { 
-      card1.classList.remove('fx-locked'); card2.classList.remove('fx-locked'); banner.classList.add('hidden'); 
+      content.classList.remove('locked'); banner.classList.add('hidden'); 
     } 
   }
 
@@ -325,7 +323,12 @@
   zeichneFarbrad();
 
   function verarbeiteEingabeKoordinate(x, y) {
-    if (!bleChar) return; const dx = x - radius, dy = y - radius, distanz = Math.sqrt(dx*dx + dy*dy); if (distanz > radius) return;
+    if (!bleChar) return;
+    if (!gforceProtectAktiv) {
+      alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz, um den Show-Modus freizuschalten!");
+      return;
+    }
+    const dx = x - radius, dy = y - radius, distanz = Math.sqrt(dx*dx + dy*dy); if (distanz > radius) return;
     lastX = x; lastY = y; zeichneFarbrad();
     let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
     const saettigung = Math.min(100, Math.round((distanz / radius) * 100)), rgb = hslZuRgb(winkel, saettigung, 50);
@@ -333,7 +336,6 @@
     currentHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1); currentRgbw = { r: rgb.r, g: rgb.g, b: rgb.b, w: 0 };
     const p = document.getElementById('colorPreview'); if (p) { p.style.backgroundColor = currentHex; p.style.color = (rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114) > 186 ? '#000' : '#fff'; }
     
-    // FIX: Sensor-Schleife kurzzeitig sperren für Live-Vorschau
     blockiereSensorsignale = true;
     const now = Date.now(); if (now - lastSend > 65) { lastSend = now; activeFx = 1; updateUI(); senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0"); }
     setTimeout(() => { blockiereSensorsignale = false; }, 1000);
@@ -343,8 +345,8 @@
   canvas.addEventListener('mousedown', (e) => { isDragging = true; const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); });
   canvas.addEventListener('mousemove', (e) => { if (isDragging) { const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); } });
   window.addEventListener('mouseup', () => isDragging = false);
-  canvas.addEventListener('touchstart', (e) => { isDragging = true; if (e.touches && e.touches.length > 0) { const rect = canvas.getBoundingClientRect(), touch = e.touches; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
-  canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches && e.touches.length > 0) { e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
+  canvas.addEventListener('touchstart', (e) => { isDragging = true; if (e.touches && e.touches.length > 0) { const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
+  canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches && e.touches.length > 0) { e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
   window.addEventListener('touchend', () => isDragging = false);
 
   function hslZuRgb(h, s, l) { h /= 360; s /= 100; l /= 100; let r, g, b; if (s === 0) { r = g = b = l; } else { const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3); } return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) }; }
@@ -358,12 +360,12 @@
       const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.style.backgroundColor = s.hex; btn.innerText = idx + 1;
       let pressTimer; btn.onpointerdown = () => { pressTimer = setTimeout(() => { slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex }; localStorage.setItem('i20n_web_slots', JSON.stringify(slots)); renderSlots(); alert("Farbe gespeichert!"); }, 800); };
       btn.onpointerup = () => clearTimeout(pressTimer); 
-      btn.onclick = () => { blockiereSensorsignale = true; currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; lastX = null; lastY = null; zeichneFarbrad(); const p = document.getElementById('colorPreview'); if (p) p.style.backgroundColor = s.hex; activeFx = 1; updateUI(); senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); setTimeout(() => { blockiereSensorsignale = false; }, 1000); };
+      btn.onclick = () => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz!"); return; } blockiereSensorsignale = true; currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; lastX = null; lastY = null; zeichneFarbrad(); const p = document.getElementById('colorPreview'); if (p) p.style.backgroundColor = s.hex; activeFx = 1; updateUI(); senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); setTimeout(() => { blockiereSensorsignale = false; }, 1000); };
       container.appendChild(btn);
     });
   }
 
-  function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { blockiereSensorsignale = true; activeFx = id; updateUI(); senden("FX:" + id); setTimeout(() => { blockiereSensorsignale = false; }, 1000); }; grid.appendChild(btn); }); }
+  function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz!"); return; } blockiereSensorsignale = true; activeFx = id; updateUI(); senden("FX:" + id); setTimeout(() => { blockiereSensorsignale = false; }, 1000); }; grid.appendChild(btn); }); }
   function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } blockiereSensorsignale = true; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("WELTEST:" + item.id); setTimeout(() => { blockiereSensorsignale = false; }, 3000); }; grid.appendChild(btn); }); }
   async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
   function initTflSliders() { document.getElementById('tonSlider').value = tflTon; document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagSlider').value = tagHell; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtSlider').value = nachtHell; document.getElementById('nachtText').innerText = nachtHell + '%'; }
@@ -381,7 +383,8 @@
   
   async function speichereTflAufChip() { if (!bleChar) return; const mix = bTflMix(tflTon), tagVal = Math.round((tagHell / 100) * 255), nachtVal = Math.round((nachtHell / 100) * 255); await senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); activeFx = 0; stoppeTimerUi(); updateUI(); alert("Standlicht gespeichert!"); }
 
-  renderSlots(); renderEffekte(); renderWelcomeEffekte(); initTflSliders();
+  // Initialzustand erzwingen beim Laden
+  setzeShowSperre(true); renderSlots(); renderEffekte(); renderWelcomeEffekte(); initTflSliders();
 </script>
 </body>
 </html>
