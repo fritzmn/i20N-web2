@@ -30,74 +30,18 @@
     }
     .header { text-align: center; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; }
     .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
-    h1 {
-      font-size: 24px;
-      margin: 0;
-      letter-spacing: 1.5px;
-      font-weight: 900;
-      font-style: italic;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-shadow: 0 2px 10px rgba(0, 168, 232, 0.35);
-    }
-    .n-logo {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #ff2a3c 0%, #9e0b18 100%);
-      color: #ffffff;
-      font-family: "Arial Black", Impact, sans-serif;
-      font-weight: 900;
-      font-style: italic;
-      font-size: 21px;
-      padding: 1px 11px 2px 9px;
-      transform: skewX(-18deg);
-      border-radius: 4px;
-      border-left: 3.5px solid #00b4d8;
-      box-shadow: 0 3px 12px rgba(230, 57, 70, 0.65);
-      letter-spacing: -1px;
-    }
+    h1 { font-size: 24px; margin: 0; letter-spacing: 1.5px; font-weight: 900; font-style: italic; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 10px rgba(0, 168, 232, 0.35); }
+    .n-logo { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ff2a3c 0%, #9e0b18 100%); color: #ffffff; font-family: "Arial Black", Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 21px; padding: 1px 11px 2px 9px; transform: skewX(-18deg); border-radius: 4px; border-left: 3.5px solid #00b4d8; box-shadow: 0 3px 12px rgba(230, 57, 70, 0.65); letter-spacing: -1px; }
     .n-logo span { transform: skewX(6deg); display: inline-block; }
-    #status {
-      font-size: 13px;
-      color: var(--sub);
-      margin-top: 8px;
-      font-weight: 600;
-      background: rgba(255, 255, 255, 0.04);
-      padding: 4px 12px;
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .card {
-      background: var(--card);
-      border-radius: 18px;
-      padding: 16px;
-      width: 100%;
-      max-width: 400px;
-      margin-top: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-      position: relative;
-    }
+    #status { font-size: 13px; color: var(--sub); margin-top: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.04); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); }
+    .card { background: var(--card); border-radius: 18px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; border: 1px solid rgba(255, 255, 255, 0.07); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); position: relative; }
     .card-title { font-size: 15px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.3px; }
-    .btn {
-      width: 100%;
-      padding: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
-      color: white;
-      transition: all 0.15s ease;
-      text-align: center;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-    }
+    .btn { width: 100%; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; color: white; transition: all 0.15s ease; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
     .btn:active { transform: scale(0.97); }
     .btn-connect { background: linear-gradient(135deg, #00b4d8 0%, #005f99 100%); margin-bottom: 10px; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.35); }
     .btn-auto { background: linear-gradient(135deg, #38b000 0%, #007200 100%); font-size: 15px; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(56, 176, 0, 0.35); }
     .btn-save { background: linear-gradient(135deg, #2ec4b6 0%, #1b8a5a 100%); margin-top: 18px; box-shadow: 0 4px 14px rgba(46, 196, 182, 0.35); }
+    .btn-calib { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); font-size: 13px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
     .btn-gps { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; box-shadow: 0 4px 14px rgba(239, 35, 60, 0.35); }
     .btn-gps.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; box-shadow: 0 4px 14px rgba(0, 150, 199, 0.4); }
     .active-border { outline: 2px solid #ffffff; }
@@ -112,11 +56,8 @@
     .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
     .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
     canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); }
-    .wheel-preview-box {
-      width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
-      background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    }
+    canvas#gMeterCanvas { background: #161920; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 0 15px #000; margin: 8px auto; display: block; }
+    .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
     .slot-row { display: flex; justify-content: space-between; margin-top: 10px; }
     .slot-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.85); font-weight: 900; color: #fff; text-shadow: 0 1px 4px #000; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); transition: 0.12s; }
     .slot-btn:active { transform: scale(0.92); }
@@ -169,6 +110,17 @@
       </div>
 
       <div id="showContent" class="locked">
+        <!-- LIVE G-METER MODUL -->
+        <div class="card">
+          <div class="card-title"><span>🏁 Telemetrie / Live G-Force Meter</span></div>
+          <canvas id="gMeterCanvas" width="200" height="200"></canvas>
+          <div style="display:flex; justify-content:space-around; font-size:12px; font-weight:bold; color:var(--sub); text-align:center; margin-top:6px;">
+            <div>X (Kurve): <span id="valGX" style="color:#fff;">0.00 G</span></div>
+            <div>Y (Bremse): <span id="valGY" style="color:#fff;">0.00 G</span></div>
+          </div>
+          <button class="btn btn-calib" onclick="sendeKalibrierung()">📍 Sensor nullen (Kalibrieren)</button>
+        </div>
+
         <div class="card">
           <div class="card-title"><span>🕹️ Live-Trigger & Foto-Shooting</span></div>
           <div class="action-grid">
@@ -184,21 +136,21 @@
             <canvas id="colorWheel" width="220" height="220"></canvas>
           </div>
           
-          <div class="sub-label"><span>☀️ Show-Helligkeit / Dunkelheit</span><span id="briText">100%</span></div>
+          <div class="sub-label"><span>☀️ Show-Helligkeit</span><span id="briText">100%</span></div>
           <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
           <div class="slider-hints"><span>0% (Dunkel)</span><span>100% (Max Hell)</span></div>
 
-          <div class="sub-label"><span>💾 Farb-Slots (Tippen = Laden | 1 Sek. halten = Speichern)</span></div>
+          <div class="sub-label"><span>💾 Farb-Slots (1 Sek. halten = Speichern)</span></div>
           <div class="slot-row" id="slotContainer"></div>
         </div>
 
         <div class="card">
-          <div class="card-title"><span>✨ 24 Show-Effekte (Übernehmen deine Farbe)</span></div>
+          <div class="card-title"><span>✨ 26 Show-Effekte (Inkl. G-Force Steuerung)</span></div>
           <div class="grid" id="fxGrid"></div>
 
           <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
           <input type="range" id="spdSlider" min="1" max="100" value="50" oninput="onSpdSliderChange()">
-          <div class="slider-hints"><span>1% (Sehr langsam)</span><span>100% (Sehr schnell)</span></div>
+          <div class="slider-hints"><span>1%</span><span>100%</span></div>
         </div>
 
         <div class="card">
@@ -218,10 +170,10 @@
         <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
         <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit</span><span id="tagText">100%</span></div>
         <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange('TAG')">
-        <div class="slider-hints"><span>0% (Aus)</span><span>100% (Max)</span></div>
+        <div class="slider-hints"><span>0%</span><span>100%</span></div>
         <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht</span><span id="nachtText">20%</span></div>
         <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange('NACHT')">
-        <div class="slider-hints"><span>0% (Aus)</span><span>70% (Max)</span></div>
+        <div class="slider-hints"><span>0%</span><span>70%</span></div>
         <button class="btn btn-save" onclick="speichereTflAufChip()">💾 STANDLICHT IM CHIP SPEICHERN</button>
       </div>
     </div>
@@ -229,20 +181,20 @@
     <div id="viewWel" class="hidden">
       <div class="card">
         <div class="card-title"><span>👋 Welcome-Home Animation (4s in Weiß)</span></div>
-        <div class="sub-label"><span>Tippen = Vorschau abspielen (nur im Stand)</span></div>
         <div class="grid" id="welcomeGrid"></div>
         <button class="btn btn-save" onclick="speichereWelcomeAufChip()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
       </div>
     </div>
   </div>
 
-  <div class="version-footer">Ver. 0.39</div>
+  <div class="version-footer">Ver. 0.41</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
   let tflTon = 60, tagHell = 100, nachtHell = 20, welcomeTyp = 1, currentHex = "#00a8e8", currentRgbw = { r: 0, g: 168, b: 232, w: 0 };
   let gpsAktiv = false, gpsWatchId = null, aktuelleKmh = 0, sollAutoReconnect = false, reconnectTimer = null, timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
   let lastX = null, lastY = null;
+  let curGX = 0.0, curGY = 0.0;
 
   let slots = JSON.parse(localStorage.getItem('i20n_web_slots')) || [
     { r: 255, g: 0, b: 0, w: 0, hex: '#ff0000' }, { r: 0, g: 168, b: 232, w: 0, hex: '#00a8e8' },
@@ -259,19 +211,44 @@
     "🌅 9. Sanft Einblenden", "🌇 10. Sanft Ausblenden", "🕯️ 11. Kerzenflackern", "⛈️ 12. Gewitter / Blitz",
     "🆘 13. SOS-Signal", "🏁 14. i20N Performance", "🌈 15. Regenbogen Sanft", "🎉 16. Farb-Sprung",
     "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch", "⚡ 19. Highway Lichthupe", "🌋 20. Plasma & Magma",
-    "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Arcade Laser"
+    "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Laser",
+    "💥 25. G-Force Flame", "⚠️ 26. Emergency Brake"
   ];
 
   const welcomeEffekte = [
-    { id: 1, name: "🌅 1. Sanft Hochdimmen" },
-    { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
-    { id: 3, name: "💓 3. Herzschlag-Start" },
-    { id: 4, name: "✨ 4. Stufen-Zündung" },
-    { id: 5, name: "💥 5. Triple-Threat Pulse" },
-    { id: 6, name: "🌀 6. Hyper-Spool Fade" },
-    { id: 7, name: "🏁 7. Track-Check Scanner" },
-    { id: 8, name: "🚫 8. Aus (Sofort An)" }
+    { id: 1, name: "🌅 1. Sanft Hochdimmen" }, { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
+    { id: 3, name: "💓 3. Herzschlag-Start" }, { id: 4, name: "✨ 4. Stufen-Zündung" },
+    { id: 5, name: "💥 5. Triple Pulsing" }, { id: 6, name: "🌀 6. Hyper-Spool Fade" },
+    { id: 7, name: "🏁 7. Track-Scanner" }, { id: 8, name: "🚫 8. Aus (Sofort An)" }
   ];
+
+  const gCanvas = document.getElementById('gMeterCanvas'), gCtx = gCanvas.getContext('2d'), gRad = gCanvas.width / 2;
+  function zeichneGMeter() {
+    gCtx.clearRect(0,0,gCanvas.width,gCanvas.height);
+    gCtx.strokeStyle = 'rgba(255,255,255,0.15)'; gCtx.lineWidth = 1;
+    gCtx.beginPath(); gCtx.arc(gRad, gRad, gRad-10, 0, 2*Math.PI); gCtx.stroke();
+    gCtx.beginPath(); gCtx.arc(gRad, gRad, gRad/2, 0, 2*Math.PI); gCtx.stroke();
+    gCtx.beginPath(); gCtx.moveTo(10, gRad); gCtx.lineTo(gCanvas.width-10, gRad); gCtx.stroke();
+    gCtx.beginPath(); gCtx.moveTo(gRad, 10); gCtx.lineTo(gRad, gCanvas.height-10); gCtx.stroke();
+    let ptX = gRad + (curGX / 2.0) * (gRad-10);
+    let ptY = gRad - (curGY / 2.0) * (gRad-10); // Minus dreht Y mathematisch richtig nach oben fürs Bremsen
+    ptX = Math.max(10, Math.min(gCanvas.width-10, ptX)); ptY = Math.max(10, Math.min(gCanvas.height-10, ptY));
+    gCtx.beginPath(); gCtx.arc(ptX, ptY, 6, 0, 2*Math.PI); gCtx.fillStyle = '#e63946'; gCtx.fill();
+    gCtx.strokeStyle = '#fff'; gCtx.lineWidth = 2; gCtx.stroke();
+  }
+  zeichneGMeter();
+
+  function verarbeiteChipDaten(datenString) {
+    if(datenString.startsWith("G:")) {
+      let teile = datenString.substring(2).split(',');
+      curGX = parseFloat(teile[0]); curGY = parseFloat(teile[1]);
+      document.getElementById('valGX').innerText = curGX.toFixed(2) + " G";
+      document.getElementById('valGY').innerText = curGY.toFixed(2) + " G";
+      zeichneGMeter();
+    }
+  }
+
+  function sendeKalibrierung() { if(confirm("Auto steht absolut eben im Stillstand?")) senden("CALIB"); }
 
   const btnFlash = document.getElementById('btnFlashHold');
   const startFlash = (e) => { e.preventDefault(); if (!bleChar || aktuelleKmh >= 5) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
@@ -282,41 +259,12 @@
   function starteFotoBlitz() {
     if (!bleChar || aktuelleKmh >= 5 || snapLaeuft) return;
     snapLaeuft = true; const sub = document.getElementById('snapSub'); let sec = 3; sub.innerText = "Blitz in " + sec + "s...";
-    const cd = setInterval(() => {
-      sec--;
-      if (sec > 0) { sub.innerText = "Blitz in " + sec + "s..."; }
-      else { clearInterval(cd); sub.innerText = "📸 KLICK!"; senden("SNAP"); setTimeout(() => { sub.innerText = "(3s Countdown)"; snapLaeuft = false; }, 1200); }
-    }, 1000);
+    const cd = setInterval(() => { sec--; if (sec > 0) { sub.innerText = "Blitz in " + sec + "s..."; } else { clearInterval(cd); sub.innerText = "📸 KLICK!"; senden("SNAP"); setTimeout(() => { sub.innerText = "(3s Countdown)"; snapLaeuft = false; }, 1200); } }, 1000);
   }
 
   function onTimerSliderChange() { timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
   function senden(b) { if (!bleChar) return; let d = new TextEncoder().encode(b); try { if (bleChar.writeValueWithoutResponse) bleChar.writeValueWithoutResponse(d); else bleChar.writeValue(d); } catch (e) {} }
-
-  // REIN MATHEMATISCHE HSL-ZU-RGB KONVERTIERUNG (KRISE-SICHER)
-  function hslZuRgb(h, s, l) {
-    s /= 100; l /= 100;
-    let c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r = 0, g = 0, b = 0;
-    if (0 <= h && h < 60) { r = c; g = x; b = 0; }
-    else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
-    else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
-    else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
-    else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
-    else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
-    return { r: Math.round((r + m) * 255), g: Math.round((g + m) * 255), b: Math.round((b + m) * 255) };
-  }
-
-  function sendeTimerAufChip() {
-    senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown');
-    if (timerMinuten > 0) {
-      timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running');
-      timerUiInterval = setInterval(() => {
-        const restMs = timerEndZeitpunkt - Date.now();
-        if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); }
-        else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); }
-      }, 1000);
-    } else { stoppeTimerUi(); }
-  }
-
+  function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
   function stoppeTimerUi() { if (timerUiInterval) clearInterval(timerUiInterval); timerMinuten = 0; document.getElementById('tmrSlider').value = 0; document.getElementById('tmrText').innerText = "0 Min (Aus)"; const badge = document.getElementById('timerCountdown'); badge.innerText = "Aus"; badge.classList.remove('running'); }
   function setzeShowSperre(g) { const c = document.getElementById('showContent'), b = document.getElementById('lockBanner'); if (g) { c.classList.add('locked'); b.classList.remove('hidden'); } else { c.classList.remove('locked'); b.classList.add('hidden'); } }
   async function trenneWegenFahrt() { activeFx = 0; stoppeTimerUi(); updateUI(); await senden("DRIVE"); setTimeout(() => { if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect(); bleChar = null; document.getElementById('status').innerText = "🔒 Bluetooth getrennt (Fahrt ab 5 km/h)"; document.getElementById('status').style.color = "#e63946"; }, 250); }
@@ -333,7 +281,17 @@
     } else { gpsAktiv = false; if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId); document.getElementById('btnGps').classList.remove('active'); document.getElementById('gpsLabel').innerText = "⚠️ GPS-Schutz für Show-Modus AUS"; document.getElementById('gpsSpeed').innerText = "0 km/h"; setzeShowSperre(true); aktiviereAuto(); }
   }
 
-  async function gattVerbinden() { if (!bleDevice) return; try { const server = await bleDevice.gatt.connect(), service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b'); bleChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8'); document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000"; if (gpsAktiv && aktuelleKmh >= 5) trenneWegenFahrt(); else await senden("PARK"); } catch (e) { bleChar = null; } }
+  async function gattVerbinden() {
+    if (!bleDevice) return;
+    try {
+      const server = await bleDevice.gatt.connect(), service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+      bleChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+      document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
+      if (gpsAktiv && aktuelleKmh >= 5) trenneWegenFahrt(); else await senden("PARK");
+      
+      bleChar.startNotifications().then(() => { bleChar.addEventListener('characteristicvaluechanged', (e) => { let s = new TextDecoder().decode(e.target.value); verarbeiteChipDaten(s); }); });
+    } catch (e) { bleChar = null; }
+  }
   function starteAutoReconnectSchleife() { if (reconnectTimer) clearInterval(reconnectTimer); reconnectTimer = setInterval(async () => { if (sollAutoReconnect && bleDevice && !bleDevice.gatt.connected && aktuelleKmh < 5) { document.getElementById('status').innerText = "🔄 Suche Scheinwerfer..."; document.getElementById('status').style.color = "#00b4d8"; await gattVerbinden(); } }, 3500); }
 
   async function verbinden() {
@@ -348,95 +306,30 @@
   async function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); await senden("AUTO"); }
 
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
-  
-  function zeichneFarbrad() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let angle = 0; angle < 360; angle++) {
-      const startAngle = (angle - 2) * Math.PI / 180, endAngle = angle * Math.PI / 180;
-      ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, startAngle, endAngle); ctx.closePath();
-      const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
-      grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)');
-      ctx.fillStyle = grad; ctx.fill();
-    }
-    if (lastX !== null && lastY !== null) {
-      ctx.beginPath(); ctx.arc(lastX, lastY, 8, 0, 2 * Math.PI);
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke();
-      ctx.beginPath(); ctx.arc(lastX, lastY, 2, 0, 2 * Math.PI);
-      ctx.fillStyle = '#000000'; ctx.fill();
-    }
-  }
+  function zeichneFarbrad() { ctx.clearRect(0,0,canvas.width,canvas.height); for (let angle = 0; angle < 360; angle++) { const startAngle = (angle - 2) * Math.PI / 180, endAngle = angle * Math.PI / 180; ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, startAngle, endAngle); ctx.closePath(); const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius); grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)'); ctx.fillStyle = grad; ctx.fill(); } if (lastX !== null && lastY !== null) { ctx.beginPath(); ctx.arc(lastX, lastY, 8, 0, 2 * Math.PI); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke(); ctx.beginPath(); ctx.arc(lastX, lastY, 2, 0, 2 * Math.PI); ctx.fillStyle = '#000000'; ctx.fill(); } }
   zeichneFarbrad();
 
-  // MATHEMATISCH ABSOLUT DIEBSSICHERE KOORDINATENBERECHNUNG (OHNE CANVAS-PIXEL-AUSLESEN)
   function verarbeiteEingabeKoordinate(x, y) {
-    if (!bleChar) return;
-    const dx = x - radius;
-    const dy = y - radius;
-    const distanz = Math.sqrt(dx * dx + dy * dy);
-    
-    if (distanz > radius) return; // Außerhalb des Rades ignoriert
-
-    lastX = x; lastY = y;
-    zeichneFarbrad();
-
-    // Winkel berechnen (0 bis 360 Grad)
-    let winkel = Math.atan2(dy, dx) * (180 / Math.PI);
-    if (winkel < 0) winkel += 360;
-
-    // Sättigung bestimmen (Je weiter außen, desto satter die Farbe)
-    const saettigung = Math.min(100, Math.round((distanz / radius) * 100));
-    
-    // RGB direkt über Formel generieren statt Pixel zu lesen (iOS-Blackout behoben!)
-    const rgb = mantel = hslZuRgb(winkel, saettigung, 50);
-
-    currentHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
-    currentRgbw = { r: rgb.r, g: rgb.g, b: rgb.b, w: 0 };
-    
-    const p = document.getElementById('colorPreview');
-    if (p) { p.style.backgroundColor = currentHex; p.style.color = (rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114) > 186 ? '#000' : '#fff'; }
-    
-    const now = Date.now();
-    if (now - lastSend > 65) {
-      lastSend = now;
-      if (activeFx === 0) { activeFx = 1; updateUI(); }
-      senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0");
-    }
+    if (!bleChar) return; const dx = x - radius, dy = y - radius, distanz = Math.sqrt(dx*dx + dy*dy); if (distanz > radius) return;
+    lastX = x; lastY = y; zeichneFarbrad();
+    let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
+    const saettigung = Math.min(100, Math.round((distanz / radius) * 100)), rgb = hslZuRgb(winkel, saettigung, 50);
+    if (rgb.r === 0 && rgb.g === 0 && rgb.b === 0) return;
+    currentHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1); currentRgbw = { r: rgb.r, g: rgb.g, b: rgb.b, w: 0 };
+    const p = document.getElementById('colorPreview'); if (p) { p.style.backgroundColor = currentHex; p.style.color = (rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114) > 186 ? '#000' : '#fff'; }
+    const now = Date.now(); if (now - lastSend > 65) { lastSend = now; if (activeFx === 0) { activeFx = 1; updateUI(); } senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0"); }
   }
 
   let isDragging = false;
-  canvas.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    const rect = canvas.getBoundingClientRect();
-    verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top);
-  });
-  canvas.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-      const rect = canvas.getBoundingClientRect();
-      verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top);
-    }
-  });
+  canvas.addEventListener('mousedown', (e) => { isDragging = true; const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); });
+  canvas.addEventListener('mousemove', (e) => { if (isDragging) { const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); } });
   window.addEventListener('mouseup', () => isDragging = false);
-
-  canvas.addEventListener('touchstart', (e) => {
-    isDragging = true;
-    if (e.touches && e.touches.length > 0) {
-      const rect = canvas.getBoundingClientRect();
-      const touch = e.touches[0];
-      verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY));
-    }
-  }, { passive: false });
-
-  canvas.addEventListener('touchmove', (e) => {
-    if (isDragging && e.touches && e.touches.length > 0) {
-      e.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      const touch = e.touches[0];
-      verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY));
-    }
-  }, { passive: false });
-
+  canvas.addEventListener('touchstart', (e) => { isDragging = true; if (e.touches && e.touches.length > 0) { const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
+  canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches && e.touches.length > 0) { e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
   window.addEventListener('touchend', () => isDragging = false);
 
+  function hslZuRgb(h, s, l) { h /= 360; s /= 100; l /= 100; let r, g, b; if (s === 0) { r = g = b = l; } else { const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3); } return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) }; }
+  function hue2rgb(p, q, t) { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1/6) return p + (q - p) * 6 * t; if (t < 1/2) return q; if (t < 2/3) return p + (q - p) * (2/3 - t) * 6; return p; }
   function onBriSliderChange() { showBri = parseInt(document.getElementById('briSlider').value); document.getElementById('briText').innerText = showBri + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; if (activeFx === 0) { activeFx = 1; updateUI(); senden("RGBW:" + currentRgbw.r + "," + currentRgbw.g + "," + currentRgbw.b + "," + currentRgbw.w); } senden("BRI:" + showBri); } }
   function onSpdSliderChange() { speed = parseInt(document.getElementById('spdSlider').value); document.getElementById('spdText').innerText = speed + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; senden("SPD:" + speed); } }
 
@@ -446,17 +339,7 @@
       const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.style.backgroundColor = s.hex; btn.innerText = idx + 1;
       let pressTimer; btn.onpointerdown = () => { pressTimer = setTimeout(() => { slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex }; localStorage.setItem('i20n_web_slots', JSON.stringify(slots)); renderSlots(); alert("Farbe gespeichert!"); }, 800); };
       btn.onpointerup = () => clearTimeout(pressTimer); 
-      
-      btn.onclick = () => { 
-        currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; 
-        currentHex = s.hex; 
-        lastX = null; lastY = null;
-        zeichneFarbrad();
-        const p = document.getElementById('colorPreview'); 
-        if (p) { p.style.backgroundColor = s.hex; p.style.color = (s.r*0.299 + s.g*0.587 + s.b*0.114) > 186 ? '#000' : '#fff'; }
-        if (activeFx === 0) { activeFx = 1; updateUI(); } 
-        senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); 
-      };
+      btn.onclick = () => { currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; lastX = null; lastY = null; zeichneFarbrad(); const p = document.getElementById('colorPreview'); if (p) p.style.backgroundColor = s.hex; if (activeFx === 0) { activeFx = 1; updateUI(); } senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); };
       container.appendChild(btn);
     });
   }
@@ -464,16 +347,9 @@
   function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { activeFx = id; updateUI(); senden("FX:" + id); }; grid.appendChild(btn); }); }
   function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } if (gpsAktiv && aktuelleKmh >= 5) return; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("PARK"); await senden("WELTEST:" + item.id); }; grid.appendChild(btn); }); }
   async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
-
   function initTflSliders() { document.getElementById('tonSlider').value = tflTon; document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagSlider').value = tagHell; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtSlider').value = nachtHell; document.getElementById('nachtText').innerText = nachtHell + '%'; }
   function berechneTflMix(t) { return { r: Math.round((t / 100) * 15), g: Math.round((t / 100) * 70), b: Math.round((t / 100) * 180), w: 255 }; }
-
-  function onTflSliderChange(q) {
-    tflTon = parseInt(document.getElementById('tonSlider').value); tagHell = parseInt(document.getElementById('tagSlider').value); nachtHell = parseInt(document.getElementById('nachtSlider').value);
-    document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtText').innerText = nachtHell + '%';
-    const now = Date.now(); if (now - lastSend > 65) { lastSend = now; const mix = berechneTflMix(tflTon), f = (q === 'NACHT' ? nachtHell : tagHell) / 100; activeFx = 1; updateUI(); senden("RGBW:" + Math.round(mix.r * f) + "," + Math.round(mix.g * f) + "," + Math.round(mix.b * f) + "," + Math.round(mix.w * f)); }
-  }
-
+  function onTflSliderChange(q) { tflTon = parseInt(document.getElementById('tonSlider').value); tagHell = parseInt(document.getElementById('tagSlider').value); nachtHell = parseInt(document.getElementById('nachtSlider').value); document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtText').innerText = nachtHell + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; const mix = berechneTflMix(tflTon), f = (q === 'NACHT' ? nachtHell : tagHell) / 100; activeFx = 1; updateUI(); senden("RGBW:" + Math.round(mix.r * f) + "," + Math.round(mix.g * f) + "," + Math.round(mix.b * f) + "," + Math.round(mix.w * f)); } }
   async function speichereTflAufChip() { if (!bleChar) return; const mix = berechneTflMix(tflTon), tagVal = Math.round((tagHell / 100) * 255), nachtVal = Math.round((nachtHell / 100) * 255); await senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); activeFx = 0; stoppeTimerUi(); updateUI(); alert("Standlicht gespeichert!"); }
   function wechselTab(z) { document.getElementById('viewShow').className = z === 'SHOW' ? '' : 'hidden'; document.getElementById('viewTfl').className = z === 'TFL' ? '' : 'hidden'; document.getElementById('viewWel').className = z === 'WEL' ? '' : 'hidden'; document.getElementById('tabShow').className = 'tab-btn' + (z === 'SHOW' ? ' tab-active' : ''); document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : ''); document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : ''); }
   function updateUI() { document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : ''); renderEffekte(); }
