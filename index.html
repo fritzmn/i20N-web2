@@ -203,7 +203,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.11</div>
+  <div class="version-footer">Ver. 1.06</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -238,11 +238,9 @@
     { id: 7, name: "🏁 7. Track-Scanner" }, { id: 8, name: "🚫 8. Aus (Sofort An)" }
   ];
 
-  // FIX VER. 1.11: Korrekter Funktionsname wiederhergestellt, damit das Fenster schließt!
   function akzeptiereDisclaimer() { document.getElementById('legalModal').style.display = 'none'; }
 
   function verarbeiteChipDaten(datenString) {
-    if (blockiereSensorsignale) return;
     if(datenString.startsWith("G:")) {
       let teile = datenString.substring(2).split(',');
       curGX = parseFloat(teile[0]); curGY = parseFloat(teile[1]);
@@ -250,7 +248,9 @@
       document.getElementById('valGY').innerText = curGY.toFixed(2) + " G";
     }
     else if(datenString == "FORCE_AUTO") {
-      activeFx = 0; stoppeTimerUi(); updateUI();
+      if (!blockiereSensorsignale) {
+        activeFx = 0; stoppeTimerUi(); updateUI();
+      }
     }
   }
 
@@ -322,7 +322,7 @@
   zeichneFarbrad();
 
   function verarbeiteEingabeKoordinate(x, y) {
-    if (!gforceProtectAktiv) return; 
+    if (!gforceProtectAktiv) return; // FIX VER. 1.06: Ignoriert Eingaben komplett, wenn Show gesperrt ist
     if (!bleChar) return;
     const dx = x - radius, dy = y - radius, distanz = Math.sqrt(dx*dx + dy*dy); if (distanz > radius) return;
     lastX = x; lastY = y; zeichneFarbrad();
@@ -341,8 +341,8 @@
   canvas.addEventListener('mousedown', (e) => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz, um den Show-Modus freizuschalten!"); return; } isDragging = true; const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); });
   canvas.addEventListener('mousemove', (e) => { if (isDragging) { const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); } });
   window.addEventListener('mouseup', () => isDragging = false);
-  canvas.addEventListener('touchstart', (e) => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz, um den Show-Modus freizuschalten!"); return; } isDragging = true; if (e.touches && e.touches.length > 0) { const rect = canvas.getBoundingClientRect(), touch = e.touches; verarbeiteEingabeKoordinate(touch.clientX - rect.left, touch.clientY - rect.top); } }, { passive: false });
-  canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches && e.touches.length > 0) { e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches; verarbeiteEingabeKoordinate(touch.clientX - rect.left, touch.clientY - rect.top); } }, { passive: false });
+  canvas.addEventListener('touchstart', (e) => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz, um den Show-Modus freizuschalten!"); return; } isDragging = true; if (e.touches && e.touches.length > 0) { const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.clientX - rect.left, touch.clientY - rect.top); } }, { passive: false });
+  canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches && e.touches.length > 0) { e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.clientX - rect.left, touch.clientY - rect.top); } }, { passive: false });
   window.addEventListener('touchend', () => isDragging = false);
 
   function hslZuRgb(h, s, l) { h /= 360; s /= 100; l /= 100; let r, g, b; if (s === 0) { r = g = b = l; } else { const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3); } return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) }; }
@@ -362,7 +362,7 @@
   }
 
   function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz!"); return; } blockiereSensorsignale = true; activeFx = id; updateUI(); senden("FX:" + id); setTimeout(() => { blockiereSensorsignale = false; }, 400); }; grid.appendChild(btn); }); }
-  function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } blockiereSensorsignale = true; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("WELTEST:" + item.id); setTimeout(() => { blockiereSensorsignale = false; }, 4500); }; grid.appendChild(btn); }); }
+  function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } blockiereSensorsignale = true; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("WELTEST:" + item.id); setTimeout(() => { blockiereSensorsignale = false; }, 1500); }; grid.appendChild(btn); }); }
   async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
   function initTflSliders() { document.getElementById('tonSlider').value = tflTon; document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagSlider').value = tagHell; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtSlider').value = nachtHell; document.getElementById('nachtText').innerText = nachtHell + '%'; }
 
@@ -386,6 +386,8 @@
   }
 
   async function speichereTflAufChip() { if (!bleChar) return; const mix = bTflMix(tflTon), tagVal = Math.round((tagHell / 100) * 255), nachtVal = Math.round((nachtHell / 100) * 255); await senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); activeFx = 0; stoppeTimerUi(); updateUI(); alert("Standlicht gespeichert!"); }
+  
+  // FIX VER. 1.06: Tab-Wechsel-Zuweisung komplett entkoppelt von jeglicher Objektsperre
   function wechselTab(z) { document.getElementById('viewShow').className = z === 'SHOW' ? '' : 'hidden'; document.getElementById('viewTfl').className = z === 'TFL' ? '' : 'hidden'; document.getElementById('viewWel').className = z === 'WEL' ? '' : 'hidden'; document.getElementById('tabShow').className = 'tab-btn' + (z === 'SHOW' ? ' tab-active' : ''); document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : ''); document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : ''); }
   function updateUI() { document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : ''); renderEffekte(); }
 
