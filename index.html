@@ -42,8 +42,8 @@
     .btn-auto { background: linear-gradient(135deg, #38b000 0%, #007200 100%); font-size: 15px; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(56, 176, 0, 0.35); }
     .btn-save { background: linear-gradient(135deg, #2ec4b6 0%, #1b8a5a 100%); margin-top: 18px; box-shadow: 0 4px 14px rgba(46, 196, 182, 0.35); }
     .btn-calib { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); font-size: 13px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
-    .btn-gps { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; box-shadow: 0 4px 14px rgba(239, 35, 60, 0.35); }
-    .btn-gps.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; box-shadow: 0 4px 14px rgba(0, 150, 199, 0.4); }
+    .btn-gprotect { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; box-shadow: 0 4px 14px rgba(239, 35, 60, 0.35); }
+    .btn-gprotect.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; box-shadow: 0 4px 14px rgba(0, 150, 199, 0.4); }
     .active-border { outline: 2px solid #ffffff; }
     .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
     .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 13px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); }
@@ -90,9 +90,9 @@
   <div class="card">
     <button class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
     <button id="btnAuto" class="btn btn-auto active-border" onclick="aktiviereAuto()">🛡️ ALLTAGS-AUTOMATIK (TFL / DIMM)</button>
-    <button id="btnGps" class="btn btn-gps" onclick="toggleGps()">
-      <span id="gpsLabel">⚠️ GPS-Schutz für Show-Modus AUS</span>
-      <span id="gpsSpeed">0 km/h</span>
+    <button id="btnGprotect" class="btn btn-gprotect" onclick="toggleGforceProtect()">
+      <span id="gLabel">🔒 G-Kraft-Schutz für Show-Modus AUS</span>
+      <span id="gState">🚫 Inaktiv</span>
     </button>
   </div>
 
@@ -106,7 +106,7 @@
     
     <div id="viewShow">
       <div id="lockBanner" class="lock-banner">
-        🔒 Show-Farben & Effekte gesperrt: Bitte oben den GPS-Anfahrschutz einschalten! (Standlicht & Welcome sind frei einstellbar)
+        🔒 Show-Farben & Effekte gesperrt: Bitte oben den G-Kraft-Schutz für den Show-Modus einschalten! (Standlicht & Welcome sind frei einstellbar)
       </div>
 
       <div id="showContent" class="locked">
@@ -187,12 +187,12 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 0.41</div>
+  <div class="version-footer">Ver. 0.42</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
   let tflTon = 60, tagHell = 100, nachtHell = 20, welcomeTyp = 1, currentHex = "#00a8e8", currentRgbw = { r: 0, g: 168, b: 232, w: 0 };
-  let gpsAktiv = false, gpsWatchId = null, aktuelleKmh = 0, sollAutoReconnect = false, reconnectTimer = null, timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
+  let gforceProtectAktiv = false, reconnectTimer = null, timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
   let lastX = null, lastY = null;
   let curGX = 0.0, curGY = 0.0;
 
@@ -231,7 +231,7 @@
     gCtx.beginPath(); gCtx.moveTo(10, gRad); gCtx.lineTo(gCanvas.width-10, gRad); gCtx.stroke();
     gCtx.beginPath(); gCtx.moveTo(gRad, 10); gCtx.lineTo(gRad, gCanvas.height-10); gCtx.stroke();
     let ptX = gRad + (curGX / 2.0) * (gRad-10);
-    let ptY = gRad - (curGY / 2.0) * (gRad-10); // Minus dreht Y mathematisch richtig nach oben fürs Bremsen
+    let ptY = gRad - (curGY / 2.0) * (gRad-10);
     ptX = Math.max(10, Math.min(gCanvas.width-10, ptX)); ptY = Math.max(10, Math.min(gCanvas.height-10, ptY));
     gCtx.beginPath(); gCtx.arc(ptX, ptY, 6, 0, 2*Math.PI); gCtx.fillStyle = '#e63946'; gCtx.fill();
     gCtx.strokeStyle = '#fff'; gCtx.lineWidth = 2; gCtx.stroke();
@@ -246,18 +246,41 @@
       document.getElementById('valGY').innerText = curGY.toFixed(2) + " G";
       zeichneGMeter();
     }
+    else if(datenString == "FORCE_AUTO") {
+      // Der Chip meldet Bewegung! Wir schalten das UI stumm auf Automatik
+      activeFx = 0; stoppeTimerUi(); updateUI();
+    }
+  }
+
+  function toggleGforceProtect() {
+    if (!gforceProtectAktiv) {
+      gforceProtectAktiv = true;
+      document.getElementById('btnGprotect').classList.add('active');
+      document.getElementById('gLabel').innerText = "🛡️ G-Kraft-Schutz AKTIV (Sperrt bei Fahrt)";
+      document.getElementById('gState').innerText = "✅ Aktiv";
+      setzeShowSperre(false);
+      senden("G_PROT:1");
+    } else {
+      gforceProtectAktiv = false;
+      document.getElementById('btnGprotect').classList.remove('active');
+      document.getElementById('gLabel').innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
+      document.getElementById('gState').innerText = "🚫 Inaktiv";
+      setzeShowSperre(true);
+      senden("G_PROT:0");
+      aktiviereAuto();
+    }
   }
 
   function sendeKalibrierung() { if(confirm("Auto steht absolut eben im Stillstand?")) senden("CALIB"); }
 
   const btnFlash = document.getElementById('btnFlashHold');
-  const startFlash = (e) => { e.preventDefault(); if (!bleChar || aktuelleKmh >= 5) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
+  const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
   const stopFlash = (e) => { if (e) e.preventDefault(); btnFlash.classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
   btnFlash.addEventListener('pointerdown', startFlash); btnFlash.addEventListener('pointerup', stopFlash); btnFlash.addEventListener('pointerleave', stopFlash); btnFlash.addEventListener('pointercancel', stopFlash);
 
   let snapLaeuft = false;
   function starteFotoBlitz() {
-    if (!bleChar || aktuelleKmh >= 5 || snapLaeuft) return;
+    if (!bleChar || snapLaeuft) return;
     snapLaeuft = true; const sub = document.getElementById('snapSub'); let sec = 3; sub.innerText = "Blitz in " + sec + "s...";
     const cd = setInterval(() => { sec--; if (sec > 0) { sub.innerText = "Blitz in " + sec + "s..."; } else { clearInterval(cd); sub.innerText = "📸 KLICK!"; senden("SNAP"); setTimeout(() => { sub.innerText = "(3s Countdown)"; snapLaeuft = false; }, 1200); } }, 1000);
   }
@@ -267,19 +290,6 @@
   function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
   function stoppeTimerUi() { if (timerUiInterval) clearInterval(timerUiInterval); timerMinuten = 0; document.getElementById('tmrSlider').value = 0; document.getElementById('tmrText').innerText = "0 Min (Aus)"; const badge = document.getElementById('timerCountdown'); badge.innerText = "Aus"; badge.classList.remove('running'); }
   function setzeShowSperre(g) { const c = document.getElementById('showContent'), b = document.getElementById('lockBanner'); if (g) { c.classList.add('locked'); b.classList.remove('hidden'); } else { c.classList.remove('locked'); b.classList.add('hidden'); } }
-  async function trenneWegenFahrt() { activeFx = 0; stoppeTimerUi(); updateUI(); await senden("DRIVE"); setTimeout(() => { if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect(); bleChar = null; document.getElementById('status').innerText = "🔒 Bluetooth getrennt (Fahrt ab 5 km/h)"; document.getElementById('status').style.color = "#e63946"; }, 250); }
-
-  function toggleGps() {
-    if (!gpsAktiv) {
-      if (!navigator.geolocation) { alert("GPS wird nicht unterstützt."); return; }
-      document.getElementById('gpsLabel').innerText = "🛰️ Warte auf GPS-Freigabe...";
-      gpsWatchId = navigator.geolocation.watchPosition((pos) => {
-        if (!gpsAktiv) { gpsAktiv = true; document.getElementById('btnGps').classList.add('active'); document.getElementById('gpsLabel').innerText = "🛰️ GPS-Schutz AKTIV (ab 5 km/h)"; setzeShowSperre(false); }
-        const mps = pos.coords.speed; aktuelleKmh = mps ? Math.round(mps * 3.6) : 0; document.getElementById('gpsSpeed').innerText = aktuelleKmh + " km/h";
-        if (aktuelleKmh >= 5 && (activeFx !== 0 || (bleDevice && bleDevice.gatt.connected))) { trenneWegenFahrt(); }
-      }, (err) => { gpsAktiv = false; setzeShowSperre(true); document.getElementById('btnGps').classList.remove('active'); document.getElementById('gpsLabel').innerText = "❌ GPS abgelehnt"; document.getElementById('gpsSpeed').innerText = "Gesperrt"; aktiviereAuto(); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 8000 });
-    } else { gpsAktiv = false; if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId); document.getElementById('btnGps').classList.remove('active'); document.getElementById('gpsLabel').innerText = "⚠️ GPS-Schutz für Show-Modus AUS"; document.getElementById('gpsSpeed').innerText = "0 km/h"; setzeShowSperre(true); aktiviereAuto(); }
-  }
 
   async function gattVerbinden() {
     if (!bleDevice) return;
@@ -287,18 +297,17 @@
       const server = await bleDevice.gatt.connect(), service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
       bleChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
       document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
-      if (gpsAktiv && aktuelleKmh >= 5) trenneWegenFahrt(); else await senden("PARK");
       
       bleChar.startNotifications().then(() => { bleChar.addEventListener('characteristicvaluechanged', (e) => { let s = new TextDecoder().decode(e.target.value); verarbeiteChipDaten(s); }); });
     } catch (e) { bleChar = null; }
   }
-  function starteAutoReconnectSchleife() { if (reconnectTimer) clearInterval(reconnectTimer); reconnectTimer = setInterval(async () => { if (sollAutoReconnect && bleDevice && !bleDevice.gatt.connected && aktuelleKmh < 5) { document.getElementById('status').innerText = "🔄 Suche Scheinwerfer..."; document.getElementById('status').style.color = "#00b4d8"; await gattVerbinden(); } }, 3500); }
+  function starteAutoReconnectSchleife() { if (reconnectTimer) clearInterval(reconnectTimer); reconnectTimer = setInterval(async () => { if (bleDevice && !bleDevice.gatt.connected) { document.getElementById('status').innerText = "🔄 Suche Scheinwerfer..."; document.getElementById('status').style.color = "#00b4d8"; await gattVerbinden(); } }, 3500); }
 
   async function verbinden() {
     try {
       document.getElementById('status').innerText = "Suche Scheinwerfer..."; document.getElementById('status').style.color = "#9aa5b4";
       bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ name: 'i20N Scheinwerfer' }], optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] });
-      sollAutoReconnect = true; bleDevice.addEventListener('gattserverdisconnected', () => { bleChar = null; if (aktuelleKmh < 5) { document.getElementById('status').innerText = "🔄 Reichweite verlassen"; document.getElementById('status').style.color = "#00b4d8"; } });
+      bleDevice.addEventListener('gattserverdisconnected', () => { bleChar = null; document.getElementById('status').innerText = "🔄 Reichweite verlassen"; document.getElementById('status').style.color = "#00b4d8"; });
       await gattVerbinden(); starteAutoReconnectSchleife();
     } catch (err) { document.getElementById('status').innerText = "❌ Fehler: " + err.message; }
   }
@@ -324,8 +333,8 @@
   canvas.addEventListener('mousedown', (e) => { isDragging = true; const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); });
   canvas.addEventListener('mousemove', (e) => { if (isDragging) { const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); } });
   window.addEventListener('mouseup', () => isDragging = false);
-  canvas.addEventListener('touchstart', (e) => { isDragging = true; if (e.touches && e.touches.length > 0) { const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
-  canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches && e.touches.length > 0) { e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
+  canvas.addEventListener('touchstart', (e) => { isDragging = true; if (e.touches && e.touches.length > 0) { const rect = canvas.getBoundingClientRect(), touch = e.touches; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
+  canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches && e.touches.length > 0) { e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches; verarbeiteEingabeKoordinate(touch.pageX - (rect.left + window.scrollX), touch.pageY - (rect.top + window.scrollY)); } }, { passive: false });
   window.addEventListener('touchend', () => isDragging = false);
 
   function hslZuRgb(h, s, l) { h /= 360; s /= 100; l /= 100; let r, g, b; if (s === 0) { r = g = b = l; } else { const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3); } return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) }; }
@@ -345,7 +354,7 @@
   }
 
   function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { activeFx = id; updateUI(); senden("FX:" + id); }; grid.appendChild(btn); }); }
-  function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } if (gpsAktiv && aktuelleKmh >= 5) return; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("PARK"); await senden("WELTEST:" + item.id); }; grid.appendChild(btn); }); }
+  function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } welcomeTyp = item.id; renderWelcomeEffekte(); await senden("WELTEST:" + item.id); }; grid.appendChild(btn); }); }
   async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
   function initTflSliders() { document.getElementById('tonSlider').value = tflTon; document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagSlider').value = tagHell; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtSlider').value = nachtHell; document.getElementById('nachtText').innerText = nachtHell + '%'; }
   function berechneTflMix(t) { return { r: Math.round((t / 100) * 15), g: Math.round((t / 100) * 70), b: Math.round((t / 100) * 180), w: 255 }; }
