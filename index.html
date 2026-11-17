@@ -203,7 +203,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.01</div>
+  <div class="version-footer">Ver. 1.02</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -369,7 +369,6 @@
   async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
   function initTflSliders() { document.getElementById('tonSlider').value = tflTon; document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagSlider').value = tagHell; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtSlider').value = nachtHell; document.getElementById('nachtText').innerText = nachtHell + '%'; }
   
-  // FIX VER 1.01: Saubere mathematische Farbmischung für echten Kalt-/Warmweißton
   function bTflMix(t) { 
     let r = 0, g = 0, b = 0;
     if (t < 50) {
