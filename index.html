@@ -47,7 +47,11 @@
     .active-border { outline: 2px solid #ffffff; }
     .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); width: 100%; }
     .btn-flash.pressing { background: #ffffff; color: #000000; text-shadow: none; }
-    .locked { opacity: 0.32; pointer-events: none; filter: grayscale(85%); }
+    
+    /* FIX: HIER WIRD NUR NOCH GRAU GEFÄRBT, ABER DIE BERÜHRUNG BLEIBT ERLAUBT */
+    .locked { opacity: 0.38; filter: grayscale(85%); }
+    .wheel-wrap, canvas#colorWheel { pointer-events: auto !important; } /* Zwingt das Farbrad, Klicks immer anzunehmen! */
+    
     .lock-banner { background: linear-gradient(135deg, rgba(230, 57, 70, 0.22) 0%, rgba(155, 11, 29, 0.25) 100%); border: 1px solid var(--nred); color: #ffccd5; padding: 11px; border-radius: 12px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; }
     .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
@@ -78,7 +82,6 @@
     .hidden { display: none; }
     .version-footer { position: absolute; bottom: 8px; right: 12px; font-size: 10px; color: #4a5464; font-weight: 600; letter-spacing: 0.5px; }
     
-    /* DISCLAIMER MODAL POPUP SYSTEM */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
     .modal-box { background: linear-gradient(145deg, #1d222b 0%, #11141a 100%); border: 2px solid var(--nred); border-radius: 20px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 10px 30px rgba(230,57,70,0.3); text-align: center; animation: modalAnim 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .modal-title { font-size: 20px; font-weight: 900; color: var(--nred); letter-spacing: 1px; margin-bottom: 14px; text-transform: uppercase; font-style: italic; }
@@ -89,7 +92,6 @@
 </head>
 <body>
 
-  <!-- LEGAL DISCLAIMER POP-UP WINDOW -->
   <div id="legalModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-title">⚠️ WICHTIGER DISCLAIMER</div>
@@ -203,7 +205,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 0.45</div>
+  <div class="version-footer">Ver. 0.46</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -237,7 +239,6 @@
     { id: 7, name: "🏁 7. Track-Scanner" }, { id: 8, name: "🚫 8. Aus (Sofort An)" }
   ];
 
-  // POPUP LOGIC CONTROL
   function akzeptiereDisclaimer() { document.getElementById('legalModal').style.display = 'none'; }
 
   function verarbeiteChipDaten(datenString) {
@@ -259,7 +260,7 @@
       document.getElementById('gLabel').innerText = "🛡️ G-Kraft-Schutz AKTIV (Sperrt bei Fahrt)";
       document.getElementById('gState').innerText = "✅ Aktiv";
       setzeShowSperre(false);
-      senden("CALIB"); // Kalibriert sofort vollautomatisch
+      senden("CALIB");
       setTimeout(() => { senden("G_PROT:1"); }, 250);
     } else {
       gforceProtectAktiv = false;
