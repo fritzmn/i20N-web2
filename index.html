@@ -203,7 +203,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.07</div>
+  <div class="version-footer">Ver. 1.10</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
@@ -241,6 +241,9 @@
   function akzeptiereDisclaimer() { document.getElementById('legalModal').style.display = 'none'; }
 
   function verarbeiteChipDaten(datenString) {
+    // FIX VER 1.10: Wenn das Handy gerade ein Sendesignal blockiert (z.B. im Welcome-Test), ignoriere eingehende Nachrichten komplett!
+    if (blockiereSensorsignale) return;
+
     if(datenString.startsWith("G:")) {
       let teile = datenString.substring(2).split(',');
       curGX = parseFloat(teile[0]); curGY = parseFloat(teile[1]);
@@ -248,9 +251,7 @@
       document.getElementById('valGY').innerText = curGY.toFixed(2) + " G";
     }
     else if(datenString == "FORCE_AUTO") {
-      if (!blockiereSensorsignale) {
-        activeFx = 0; stoppeTimerUi(); updateUI();
-      }
+      activeFx = 0; stoppeTimerUi(); updateUI();
     }
   }
 
@@ -282,116 +283,4 @@
 
   function onTimerSliderChange() { timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
   function senden(b) { if (!bleChar) return; let d = new TextEncoder().encode(b); try { if (bleChar.writeValueWithoutResponse) bleChar.writeValueWithoutResponse(d); else bleChar.writeValue(d); } catch (e) {} }
-  function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
-  function stoppeTimerUi() { if (timerUiInterval) clearInterval(timerUiInterval); timerMinuten = 0; document.getElementById('tmrSlider').value = 0; document.getElementById('tmrText').innerText = "0 Min (Aus)"; const badge = document.getElementById('timerCountdown'); badge.innerText = "Aus"; badge.classList.remove('running'); }
-  
-  function setzeShowSperre(g) { 
-    const banner = document.getElementById('lockBanner');
-    const content = document.getElementById('showContent');
-    if (g) { 
-      content.classList.add('locked'); banner.classList.remove('hidden'); 
-    } else { 
-      content.classList.remove('locked'); banner.classList.add('hidden'); 
-    } 
-  }
-
-  async function gattVerbinden() {
-    if (!bleDevice) return;
-    try {
-      const server = await bleDevice.gatt.connect(), service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
-      bleChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
-      document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
-      bleChar.startNotifications().then(() => { bleChar.addEventListener('characteristicvaluechanged', (e) => { let s = new TextDecoder().decode(e.target.value); verarbeiteChipDaten(s); }); });
-    } catch (e) { bleChar = null; }
-  }
-  function starteAutoReconnectSchleife() { if (reconnectTimer) reconnectTimer = setInterval(async () => { if (bleDevice && !bleDevice.gatt.connected) { document.getElementById('status').innerText = "🔄 Suche Scheinwerfer..."; document.getElementById('status').style.color = "#00b4d8"; await gattVerbinden(); } }, 3500); }
-
-  async function verbinden() {
-    try {
-      document.getElementById('status').innerText = "Suche Scheinwerfer..."; document.getElementById('status').style.color = "#9aa5b4";
-      bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ name: 'i20N Scheinwerfer' }], optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] });
-      bleDevice.addEventListener('gattserverdisconnected', () => { bleChar = null; document.getElementById('status').innerText = "🔄 Reichweite verlassen"; document.getElementById('status').style.color = "#00b4d8"; });
-      await gattVerbinden(); starteAutoReconnectSchleife();
-    } catch (err) { document.getElementById('status').innerText = "❌ Fehler: " + err.message; }
-  }
-
-  async function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); if (bleChar) await senden("AUTO"); }
-
-  const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
-  function zeichneFarbrad() { ctx.clearRect(0,0,canvas.width,canvas.height); for (let angle = 0; angle < 360; angle++) { const startAngle = (angle - 2) * Math.PI / 180, endAngle = angle * Math.PI / 180; ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, startAngle, endAngle); ctx.closePath(); const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius); grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)'); ctx.fillStyle = grad; ctx.fill(); } if (lastX !== null && lastY !== null) { ctx.beginPath(); ctx.arc(lastX, lastY, 8, 0, 2 * Math.PI); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke(); ctx.beginPath(); ctx.arc(lastX, lastY, 2, 0, 2 * Math.PI); ctx.fillStyle = '#000000'; ctx.fill(); } }
-  zeichneFarbrad();
-
-  function verarbeiteEingabeKoordinate(x, y) {
-    if (!gforceProtectAktiv) return; 
-    if (!bleChar) return;
-    const dx = x - radius, dy = y - radius, distanz = Math.sqrt(dx*dx + dy*dy); if (distanz > radius) return;
-    lastX = x; lastY = y; zeichneFarbrad();
-    let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
-    const saettigung = Math.min(100, Math.round((distanz / radius) * 100)), rgb = hslZuRgb(winkel, saettigung, 50);
-    if (rgb.r === 0 && rgb.g === 0 && rgb.b === 0) return;
-    currentHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1); currentRgbw = { r: rgb.r, g: rgb.g, b: rgb.b, w: 0 };
-    const p = document.getElementById('colorPreview'); if (p) { p.style.backgroundColor = currentHex; p.style.color = (rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114) > 186 ? '#000' : '#fff'; }
-    
-    blockiereSensorsignale = true;
-    const now = Date.now(); if (now - lastSend > 65) { lastSend = now; activeFx = 1; updateUI(); senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0"); }
-    setTimeout(() => { blockiereSensorsignale = false; }, 400);
-  }
-
-  let isDragging = false;
-  canvas.addEventListener('mousedown', (e) => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz, um den Show-Modus freizuschalten!"); return; } isDragging = true; const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); });
-  canvas.addEventListener('mousemove', (e) => { if (isDragging) { const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); } });
-  window.addEventListener('mouseup', () => isDragging = false);
-  canvas.addEventListener('touchstart', (e) => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz, um den Show-Modus freizuschalten!"); return; } isDragging = true; if (e.touches && e.touches.length > 0) { const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.clientX - rect.left, touch.clientY - rect.top); } }, { passive: false });
-  canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches && e.touches.length > 0) { e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.clientX - rect.left, touch.clientY - rect.top); } }, { passive: false });
-  window.addEventListener('touchend', () => isDragging = false);
-
-  function hslZuRgb(h, s, l) { h /= 360; s /= 100; l /= 100; let r, g, b; if (s === 0) { r = g = b = l; } else { const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3); } return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) }; }
-  function hue2rgb(p, q, t) { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1/6) return p + (q - p) * 6 * t; if (t < 1/2) return q; if (t < 2/3) return p + (q - p) * (2/3 - t) * 6; return p; }
-  function onBriSliderChange() { showBri = parseInt(document.getElementById('briSlider').value); document.getElementById('briText').innerText = showBri + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; senden("BRI:" + showBri); } }
-  function onSpdSliderChange() { speed = parseInt(document.getElementById('spdSlider').value); document.getElementById('spdText').innerText = speed + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; senden("SPD:" + speed); } }
-
-  function renderSlots() {
-    const container = document.getElementById('slotContainer'); container.innerHTML = '';
-    slots.forEach((s, idx) => {
-      const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.style.backgroundColor = s.hex; btn.innerText = idx + 1;
-      let pressTimer; btn.onpointerdown = () => { pressTimer = setTimeout(() => { slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex }; localStorage.setItem('i20n_web_slots', JSON.stringify(slots)); renderSlots(); alert("Farbe gespeichert!"); }, 800); };
-      btn.onpointerup = () => clearTimeout(pressTimer); 
-      btn.onclick = () => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz!"); return; } blockiereSensorsignale = true; currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; lastX = null; lastY = null; zeichneFarbrad(); const p = document.getElementById('colorPreview'); if (p) p.style.backgroundColor = s.hex; activeFx = 1; updateUI(); senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); setTimeout(() => { blockiereSensorsignale = false; }, 400); };
-      container.appendChild(btn);
-    });
-  }
-
-  function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz!"); return; } blockiereSensorsignale = true; activeFx = id; updateUI(); senden("FX:" + id); setTimeout(() => { blockiereSensorsignale = false; }, 400); }; grid.appendChild(btn); }); }
-  
-  // FIX VER. 1.07: Erhöht die Blockierzeit auf 4500ms, damit der Sensor die 4s-Welcome-Vorschau nicht abbricht!
-  function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } blockiereSensorsignale = true; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("WELTEST:" + item.id); setTimeout(() => { blockiereSensorsignale = false; }, 4500); }; grid.appendChild(btn); }); }
-  async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
-  function initTflSliders() { document.getElementById('tonSlider').value = tflTon; document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagSlider').value = tagHell; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtSlider').value = nachtHell; document.getElementById('nachtText').innerText = nachtHell + '%'; }
-
-  function bTflMix(t) { 
-    let r = 0, g = 0, b = 0;
-    if (t < 50) {
-      let f = t / 50.0;
-      r = 255; g = Math.round(180 + (75 * f)); b = Math.round(60 + (195 * f));
-    } else {
-      let f = (t - 50) / 50.0;
-      r = Math.round(255 - (110 * f)); g = Math.round(255 - (20 * f)); b = 255;
-    }
-    return { r: r, g: g, b: b, w: 255 }; 
-  }
-
-  function onTflSliderChange(q) { 
-    blockiereSensorsignale = true;
-    tflTon = parseInt(document.getElementById('tonSlider').value); tagHell = parseInt(document.getElementById('tagSlider').value); nachtHell = parseInt(document.getElementById('nachtSlider').value); document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtText').innerText = nachtHell + '%'; 
-    const now = Date.now(); if (now - lastSend > 65) { lastSend = now; const mix = bTflMix(tflTon), f = (q === 'NACHT' ? nachtHell : tagHell) / 100; senden("RGBW_TFL:" + Math.round(mix.r * f) + "," + Math.round(mix.g * f) + "," + Math.round(mix.b * f) + "," + Math.round(mix.w * f)); } 
-    setTimeout(() => { blockiereSensorsignale = false; }, 400);
-  }
-
-  async function speichereTflAufChip() { if (!bleChar) return; const mix = bTflMix(tflTon), tagVal = Math.round((tagHell / 100) * 255), nachtVal = Math.round((nachtHell / 100) * 255); await senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); activeFx = 0; stoppeTimerUi(); updateUI(); alert("Standlicht gespeichert!"); }
-  function wechselTab(z) { document.getElementById('viewShow').className = z === 'SHOW' ? '' : 'hidden'; document.getElementById('viewTfl').className = z === 'TFL' ? '' : 'hidden'; document.getElementById('viewWel').className = z === 'WEL' ? '' : 'hidden'; document.getElementById('tabShow').className = 'tab-btn' + (z === 'SHOW' ? ' tab-active' : ''); document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : ''); document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : ''); }
-  function updateUI() { document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : ''); renderEffekte(); }
-
-  setzeShowSperre(true); renderSlots(); renderEffekte(); renderWelcomeEffekte(); initTflSliders();
-</script>
-</body>
-</html>
+  function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (
