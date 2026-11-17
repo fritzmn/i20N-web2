@@ -1,396 +1,261 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>i20 N DRL Control</title>
-  <style>
-    :root {
-      --bg: #0b0d10;
-      --card: linear-gradient(145deg, #1b1f27 0%, #13161c 100%);
-      --nblue: #00a8e8;
-      --nred: #e63946;
-      --green: #2b9348;
-      --text: #f8f9fa;
-      --sub: #9aa5b4;
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <Preferences.h>
+#include <Wire.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+
+// --- PIN-BELEGUNG (ESP32-C3 SuperMini) ---
+const int PIN_ROT   = 3;  
+const int PIN_GRUEN = 4;  
+const int PIN_BLAU  = 1;  
+const int PIN_WEISS = 0;  
+const int PIN_ABBLENDLICHT = 5; 
+
+#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+
+Preferences speicher;
+Adafruit_MPU6050 mpu;
+bool sensorGefunden = false;
+
+int tflR = 40, tflG = 60, tflB = 120, tflW = 255;
+int tflHellTag = 255;
+int tflHellNacht = 55;
+int welcomeTyp = 1;
+
+int modus = 0; 
+int zielR = 0, zielG = 168, zielB = 232, zielW = 0;
+int geschwindigkeit = 50;
+int showHelligkeit = 100;
+unsigned long letzteZeit = 0;
+int schritt = 0;
+
+bool flashAktiv = false;
+int aktiverWelcomeTyp = 1;
+unsigned long welcomeStartZeit = 0;
+unsigned long timerEnde = 0;
+bool timerAktiv = false;
+bool gforceSperreAktiv = false; 
+
+bool geraetVerbunden = false;
+bool altVerbunden = false;
+
+float offsetX = 0.0, offsetY = 0.0;
+unsigned long letzteTelemetrieZeit = 0;
+
+BLECharacteristic *pCharacteristic = nullptr;
+
+void setzeLichtDirekt(int r, int g, int b, int w) {
+  analogWrite(PIN_ROT, constrain(r, 0, 255));
+  analogWrite(PIN_GRUEN, constrain(g, 0, 255));
+  analogWrite(PIN_BLAU, constrain(b, 0, 255));
+  analogWrite(PIN_WEISS, constrain(w, 0, 255));
+}
+
+void setzeShowLicht(int r, int g, int b, int w) {
+  float hf = showHelligkeit / 100.0;
+  setzeLichtDirekt((int)(r * hf), (int)(g * hf), (int)(b * hf), (int)(w * hf));
+}
+
+void wendeTflAn(int helligkeit) {
+  float faktor = helligkeit / 255.0;
+  setzeLichtDirekt(tflR * faktor, tflG * faktor, tflB * faktor, tflW * faktor);
+}
+
+void starteWelcome(int typ) {
+  if (typ == 8) { modus = 0; return; }
+  aktiverWelcomeTyp = typ;
+  welcomeStartZeit = millis();
+  modus = 20;
+}
+
+void kalibriereSensor() {
+  if (!sensorGefunden) return;
+  sensors_event_t a, g, temp;
+  float sumX = 0, sumY = 0;
+  for (int i = 0; i < 15; i++) {
+    mpu.getEvent(&a, &g, &temp);
+    sumX += a.acceleration.x;
+    sumY += a.acceleration.y;
+    delay(15);
+  }
+  offsetX = sumX / 15.0;
+  offsetY = sumY / 15.0;
+  
+  speicher.begin("i20n", false);
+  speicher.putFloat("offX", offsetX);
+  speicher.putFloat("offY", offsetY);
+  speicher.end();
+}
+
+class ServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) { geraetVerbunden = true; }
+    void onDisconnect(BLEServer* pServer) { geraetVerbunden = false; }
+};
+
+class MyCallbacks: public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *pChar) {
+      String daten = pChar->getValue();
+      if (daten.length() > 0) {
+        daten.trim();
+        
+        if (daten == "AUTO") { modus = 0; timerAktiv = false; flashAktiv = false; }
+        else if (daten == "FLASH:1") { flashAktiv = true; }
+        else if (daten == "FLASH:0") { flashAktiv = false; }
+        else if (daten == "CALIB") { kalibriereSensor(); }
+        else if (daten == "G_PROT:1") { gforceSperreAktiv = true; }
+        else if (daten == "G_PROT:0") { gforceSperreAktiv = false; modus = 0; }
+        else if (daten.startsWith("RGBW_TFL:")) {
+          modus = 99; 
+          int p1 = daten.indexOf(':'); 
+          int p2 = daten.indexOf(',', p1 + 1); 
+          int p3 = daten.indexOf(',', p2 + 1); 
+          int p4 = daten.indexOf(',', p3 + 1);
+          int r = daten.substring(p1 + 1, p2).toInt(); 
+          int g = daten.substring(p2 + 1, p3).toInt(); 
+          int b = daten.substring(p3 + 1, p4).toInt(); 
+          int w = daten.substring(p4 + 1).toInt();
+          setzeLichtDirekt(r, g, b, w);
+        }
+        else if (daten.startsWith("RGBW:")) {
+          modus = 1;
+          int p1 = daten.indexOf(':'); int p2 = daten.indexOf(',', p1 + 1); int p3 = daten.indexOf(',', p2 + 1); int p4 = daten.indexOf(',', p3 + 1);
+          zielR = daten.substring(p1 + 1, p2).toInt(); zielG = daten.substring(p2 + 1, p3).toInt(); zielB = daten.substring(p3 + 1, p4).toInt(); zielW = daten.substring(p4 + 1).toInt();
+        }
+        else if (daten.startsWith("FX:")) { modus = daten.substring(3).toInt(); schritt = 0; }
+        else if (daten.startsWith("SPD:")) { geschwindigkeit = daten.substring(4).toInt(); }
+        else if (daten.startsWith("BRI:")) { showHelligkeit = constrain(daten.substring(4).toInt(), 0, 100); }
+        else if (daten.startsWith("TMR:")) {
+          int minuten = daten.substring(4).toInt();
+          if (minuten > 0) { timerEnde = millis() + ((unsigned long)minuten * 60000UL); timerAktiv = true; } else { timerAktiv = false; }
+        }
+        else if (daten.startsWith("WELTEST:")) { int typ = daten.substring(8).toInt(); starteWelcome(typ); }
+        else if (daten.startsWith("WELSET:")) { welcomeTyp = daten.substring(7).toInt(); speicher.begin("i20n", false); speicher.putInt("wel", welcomeTyp); speicher.end(); }
+        else if (daten.startsWith("TFLSET:")) {
+          int p0 = daten.indexOf(':'); int p1 = daten.indexOf(',', p0 + 1); int p2 = daten.indexOf(',', p1 + 1); int p3 = daten.indexOf(',', p2 + 1); int p4 = daten.indexOf(',', p3 + 1); int p5 = daten.indexOf(',', p4 + 1);
+          tflR = daten.substring(p0 + 1, p1).toInt(); tflG = daten.substring(p1 + 1, p2).toInt(); tflB = daten.substring(p2 + 1, p3).toInt(); tflW = daten.substring(p3 + 1, p4).toInt(); tflHellTag = daten.substring(p4 + 1, p5).toInt(); tflHellNacht = daten.substring(p5 + 1).toInt();
+          speicher.begin("i20n", false); speicher.putInt("r", tflR); speicher.putInt("g", tflG); speicher.putInt("b", tflB); speicher.putInt("w", tflW); speicher.putInt("tag", tflHellTag); speicher.putInt("nacht", tflHellNacht); speicher.end();
+          modus = 0;
+        }
+      }
     }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: radial-gradient(circle at top center, #18202c 0%, #090b0e 75%);
-      background-attachment: fixed;
-      color: var(--text);
-      margin: 0;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      min-height: 100vh;
+};
+
+void setup() {
+  pinMode(PIN_ROT, OUTPUT);   digitalWrite(PIN_ROT, LOW);
+  pinMode(PIN_GRUEN, OUTPUT); digitalWrite(PIN_GRUEN, LOW);
+  pinMode(PIN_BLAU, OUTPUT);  digitalWrite(PIN_BLAU, LOW);
+  pinMode(PIN_WEISS, OUTPUT); digitalWrite(PIN_WEISS, LOW);
+  pinMode(PIN_ABBLENDLICHT, INPUT);
+  delay(100);
+
+  Wire.begin(8, 9);
+  if (mpu.begin()) {
+    mpu.setAccelerometerRange(MPU6050_RANGE_4_G);
+    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+    sensorGefunden = true;
+  }
+
+  speicher.begin("i20n", true);
+  tflR = speicher.getInt("r", 40); tflG = speicher.getInt("g", 60); tflB = speicher.getInt("b", 120); tflW = speicher.getInt("w", 255);
+  tflHellTag = speicher.getInt("tag", 255); tflHellNacht = speicher.getInt("nacht", 55); welcomeTyp = speicher.getInt("wel", 1);
+  offsetX = speicher.getFloat("offX", 0.0); offsetY = speicher.getFloat("offY", 0.0);
+  speicher.end();
+
+  starteWelcome(welcomeTyp);
+
+  BLEDevice::init("i20N Scheinwerfer");
+  BLEDevice::setPower(ESP_PWR_LVL_P9);
+  BLEServer *pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new ServerCallbacks());
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR | BLECharacteristic::PROPERTY_NOTIFY);
+  pCharacteristic->setCallbacks(new MyCallbacks());
+  pService->start();
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID); pAdvertising->setScanResponse(true); pAdvertising->start();
+}
+
+void loop() {
+  if (!geraetVerbunden && altVerbunden) { delay(200); BLEDevice::startAdvertising(); altVerbunden = geraetVerbunden; }
+  if (geraetVerbunden && !altVerbunden) { altVerbunden = geraetVerbunden; }
+
+  unsigned long jetzt = millis();
+  float gX = 0.0, gY = 0.0;
+
+  if (sensorGefunden) {
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+    gX = (a.acceleration.x - offsetX) / 9.81;
+    gY = (a.acceleration.y - offsetY) / 9.81;
+
+    if (geraetVerbunden && (jetzt - letzteTelemetrieZeit >= 300)) {
+      letzteTelemetrieZeit = jetzt;
+      String telemetrieMsg = "G:" + String(gX, 2) + "," + String(gY, 2);
+      pCharacteristic->setValue(telemetrieMsg.c_str());
+      pCharacteristic->notify();
     }
-    .header { text-align: center; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; }
-    .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
-    h1 { font-size: 24px; margin: 0; letter-spacing: 1.5px; font-weight: 900; font-style: italic; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 10px rgba(0, 168, 232, 0.35); }
-    .n-logo { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ff2a3c 0%, #9e0b18 100%); color: #ffffff; font-family: "Arial Black", Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 21px; padding: 1px 11px 2px 9px; transform: skewX(-18deg); border-radius: 4px; border-left: 3.5px solid #00b4d8; box-shadow: 0 3px 12px rgba(230, 57, 70, 0.65); letter-spacing: -1px; }
-    .n-logo span { transform: skewX(6deg); display: inline-block; }
-    #status { font-size: 13px; color: var(--sub); margin-top: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.04); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); }
-    .card { background: var(--card); border-radius: 18px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; border: 1px solid rgba(255, 255, 255, 0.07); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); position: relative; }
-    .card-title { font-size: 15px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.3px; }
-    .btn { width: 100%; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; color: white; transition: all 0.15s ease; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
-    .btn:active { transform: scale(0.97); }
-    .btn-connect { background: linear-gradient(135deg, #00b4d8 0%, #005f99 100%); margin-bottom: 10px; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.35); }
-    .btn-auto { background: linear-gradient(135deg, #38b000 0%, #007200 100%); font-size: 15px; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(56, 176, 0, 0.35); }
-    .btn-save { background: linear-gradient(135deg, #2ec4b6 0%, #1b8a5a 100%); margin-top: 18px; box-shadow: 0 4px 14px rgba(46, 196, 182, 0.35); }
-    .btn-calib { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); font-size: 13px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
-    .btn-gprotect { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; box-shadow: 0 4px 14px rgba(239, 35, 60, 0.35); }
-    .btn-gprotect.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; box-shadow: 0 4px 14px rgba(0, 150, 199, 0.4); }
-    .active-border { outline: 2px solid #ffffff; }
-    .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); width: 100%; }
-    .btn-flash.pressing { background: #ffffff; color: #000000; text-shadow: none; }
-    
-    .locked { opacity: 0.28; filter: grayscale(90%); pointer-events: none !important; }
-    .lock-banner { background: linear-gradient(135deg, rgba(230, 57, 70, 0.22) 0%, rgba(155, 11, 29, 0.25) 100%); border: 1px solid var(--nred); color: #ffccd5; padding: 11px; border-radius: 12px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
-    .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; }
-    .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
-    .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
-    .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
-    canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); }
-    .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-    .g-box { display: flex; justify-content: space-around; background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 10px; }
-    .g-item { text-align: center; }
-    .g-label { font-size: 11px; color: var(--sub); font-weight: 700; display: block; margin-bottom: 4px; }
-    .g-val { font-size: 18px; font-weight: 900; color: #ffffff; font-style: italic; }
-    .slot-row { display: flex; justify-content: space-between; margin-top: 10px; }
-    .slot-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.85); font-weight: 900; color: #fff; text-shadow: 0 1px 4px #000; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); transition: 0.12s; }
-    .slot-btn:active { transform: scale(0.92); }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
-    .btn-fx { background: linear-gradient(145deg, #2b313d 0%, #1c2028 100%); border: 1px solid rgba(255, 255, 255, 0.09); padding: 13px 8px; border-radius: 11px; font-size: 12px; font-weight: 700; text-align: left; padding-left: 11px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); }
-    .btn-fx.active { background: linear-gradient(135deg, #00b4d8 0%, #e63946 100%); border: 1px solid #ffffff; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.45); }
-    .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 600; }
-    input[type="range"] { -webkit-appearance: none; width: 100%; height: 11px; border-radius: 6px; background: linear-gradient(90deg, #1f242d 0%, #343c4a 100%); border: 1px solid rgba(255,255,255,0.08); outline: none; margin: 8px 0 4px 0; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 25px; height: 25px; border-radius: 50%; background: linear-gradient(135deg, #ffffff 0%, #d8e2dc 100%); border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 168, 232, 0.6); }
-    #tonSlider { background: linear-gradient(90deg, #ffd166 0%, #ffffff 50%, #4cc9f0 100%); }
-    #briSlider { background: linear-gradient(90deg, #161920 0%, #00b4d8 50%, #ffffff 100%); }
-    #spdSlider { background: linear-gradient(90deg, #0077b6 0%, #00b4d8 50%, #e63946 100%); }
-    #tmrSlider { background: linear-gradient(90deg, #2b313d 0%, #7209b7 50%, #e63946 100%); }
-    .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #7a8594; margin-bottom: 6px; font-weight: 500; }
-    .timer-badge { background: linear-gradient(135deg, #252a34 0%, #181b22 100%); padding: 4px 10px; border-radius: 8px; font-size: 12px; color: var(--nblue); font-weight: 800; border: 1px solid rgba(0, 168, 232, 0.3); }
-    .timer-badge.running { background: linear-gradient(135deg, rgba(230, 57, 70, 0.35) 0%, rgba(155, 11, 29, 0.45) 100%); color: #ffccd5; border: 1px solid var(--nred); }
-    .hidden { display: none; }
-    .version-footer { position: absolute; bottom: 8px; right: 12px; font-size: 10px; color: #4a5464; font-weight: 600; letter-spacing: 0.5px; }
-    
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
-    .modal-box { background: linear-gradient(145deg, #1d222b 0%, #11141a 100%); border: 2px solid var(--nred); border-radius: 20px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 10px 30px rgba(230,57,70,0.3); text-align: center; animation: modalAnim 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .modal-title { font-size: 20px; font-weight: 900; color: var(--nred); letter-spacing: 1px; margin-bottom: 14px; text-transform: uppercase; font-style: italic; }
-    .modal-text { font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px; text-align: justify; }
-    .modal-btn { background: linear-gradient(135deg, #e63946 0%, #9e0b18 100%); color: white; padding: 12px; font-weight: 800; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; width: 100%; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-    @keyframes modalAnim { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  </style>
-</head>
-<body>
 
-  <div id="legalModal" class="modal-overlay">
-    <div class="modal-box">
-      <div class="modal-title">⚠️ WICHTIGER DISCLAIMER</div>
-      <div class="modal-text">
-        Dieses DRL-Steuerungsmodul und die hiermit erzeugten Lichteffekte sowie benutzerdefinierten Farben sind <strong>im Bereich der StVZO (Straßenverkehrsordnung) NICHT zugelassen</strong>. Die Nutzung ist ausschließlich für Show-Fahrzeuge, Tuning-Treffen und Motorsport-Zwecke auf abgesperrtem Privatgelände gestattet.<br><br>
-        Es wird <strong>keinerlei Haftung</strong> für Bußgelder, Stilllegungen oder Schäden übernommen, falls dieses System missbräuchlich im öffentlichen Straßenverkehr verwendet wird. Zur rechtlichen Absicherung ist das Modul mit einem integrierten G-Kraft-Sensor ausgestattet, welcher bunte Lichtspielereien bei Bewegung automatisch unterbindet.<br><br>
-        <div style="text-align: center; font-weight: 900; color: var(--nblue); font-size: 15px; margin-top: 10px; font-style: italic;">Viel Spaß!</div>
-      </div>
-      <button class="modal-btn" onclick="akzeptiereDisclaimer()">Ich verstehe & akzeptiere</button>
-    </div>
-  </div>
-
-  <div class="header">
-    <div class="title-row">
-      <h1>i20 <span class="n-logo"><span>N</span></span> DRL CONTROL</h1>
-    </div>
-    <div id="status">Nicht verbunden</div>
-  </div>
-
-  <div class="card">
-    <button class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
-    <button id="btnAuto" class="btn btn-auto active-border" onclick="aktiviereAuto()">☀️ TAGESFAHRLICHT MODUS</button>
-    <button id="btnGprotect" class="btn btn-gprotect" onclick="toggleGforceProtect()">
-      <span id="gLabel">🔒 G-Kraft-Schutz für Show-Modus AUS</span>
-      <span id="gState">🚫 Inaktiv</span>
-    </button>
-  </div>
-
-  <div class="tab-row">
-    <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
-    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
-  </div>
-
-  <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
-    
-    <div id="viewShow">
-      <div id="lockBanner" class="lock-banner">
-        🔒 Show-Farben & Effekte gesperrt: Bitte oben den G-Kraft-Schutz für den Show-Modus einschalten!
-      </div>
-
-      <div id="showContent" class="locked">
-        <div class="card">
-          <div class="card-title"><span>🏁 Telemetrie / G-Force Werte</span></div>
-          <div class="g-box">
-            <div class="g-item"><span class="g-label">SEITENKRAFT (X-ACHSE)</span><span id="valGX" class="g-val">0.00 G</span></div>
-            <div class="g-item"><span class="g-label">LÄNGSKRAFT (Y-ACHSE)</span><span id="valGY" class="g-val">0.00 G</span></div>
-          </div>
-          <button class="btn btn-calib" onclick="sendeKalibrierung()">📍 Sensor im Stillstand nullen</button>
-        </div>
-
-        <div class="card">
-          <div class="card-title"><span>🕹️ Live-Trigger</span></div>
-          <button id="btnFlashHold" class="btn btn-flash">⚡ FLASH HOLD <span style="font-size:11px; font-weight:normal;">(Gedrückt halten)</span></button>
-        </div>
-
-        <div class="card">
-          <div class="card-title"><span>🎨 Freies Farbrad</span></div>
-          <div class="wheel-wrap">
-            <div id="colorPreview" class="wheel-preview-box">LIVE-FARBE</div>
-            <canvas id="colorWheel" width="220" height="220"></canvas>
-          </div>
-          
-          <div class="sub-label"><span>☀️ Show-Helligkeit</span><span id="briText">100%</span></div>
-          <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
-          <div class="slider-hints"><span>0% (Dunkel)</span><span>100% (Max Hell)</span></div>
-
-          <div class="sub-label"><span>💾 Farb-Slots (1 Sek. halten = Speichern)</span></div>
-          <div class="slot-row" id="slotContainer"></div>
-        </div>
-
-        <div id="fxContainerCard" class="card">
-          <div class="card-title"><span>✨ 24 Show-Effekte</span></div>
-          <div class="grid" id="fxGrid"></div>
-
-          <div class="sub-label"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
-          <input type="range" id="spdSlider" min="1" max="100" value="50" oninput="onSpdSliderChange()">
-          <div class="slider-hints"><span>Slow</span><span>Fast</span></div>
-        </div>
-
-        <div id="timerContainerCard" class="card">
-          <div class="card-title"><span>⏱️ Auto-Off Show-Timer</span><span id="timerCountdown" class="timer-badge">Aus</span></div>
-          <div class="sub-label"><span>Zeit bis zur Rückkehr auf Weiß</span><span id="tmrText">0 Min (Aus)</span></div>
-          <input type="range" id="tmrSlider" min="0" max="60" value="0" oninput="onTimerSliderChange()" onchange="sendeTimerAufChip()">
-          <div class="slider-hints"><span>Aus</span><span>15 Min</span><span>30 Min</span><span>60 Min</span></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="viewTfl" class="hidden">
-      <div class="card">
-        <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
-        <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
-        <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange('TON')">
-        <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
-        <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit</span><span id="tagText">100%</span></div>
-        <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange('TAG')">
-        <div class="slider-hints"><span>0%</span><span>100%</span></div>
-        <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht</span><span id="nachtText">20%</span></div>
-        <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange('NACHT')">
-        <div class="slider-hints"><span>0%</span><span>70%</span></div>
-        <button class="btn btn-save" onclick="speichereTflAufChip()">💾 STANDLICHT IM CHIP SPEICHERN</button>
-      </div>
-    </div>
-
-    <div id="viewWel" class="hidden">
-      <div class="card">
-        <div class="card-title"><span>👋 Welcome-Home Animation (4s in Weiß)</span></div>
-        <div class="grid" id="welcomeGrid"></div>
-        <button class="btn btn-save" onclick="speichereWelcomeAufChip()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="version-footer">Ver. 1.02</div>
-
-<script>
-  let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, speed = 50, showBri = 100;
-  let tflTon = 60, tagHell = 100, nachtHell = 20, welcomeTyp = 1, currentHex = "#00a8e8", currentRgbw = { r: 0, g: 168, b: 232, w: 0 };
-  let gforceProtectAktiv = false, reconnectTimer = null, timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
-  let lastX = null, lastY = null;
-  let curGX = 0.0, curGY = 0.0;
-  let blockiereSensorsignale = false;
-
-  let slots = JSON.parse(localStorage.getItem('i20n_web_slots')) || [
-    { r: 255, g: 0, b: 0, w: 0, hex: '#ff0000' }, { r: 0, g: 168, b: 232, w: 0, hex: '#00a8e8' },
-    { r: 180, g: 0, b: 255, w: 0, hex: '#b400ff' }, { r: 0, g: 255, b: 0, w: 0, hex: '#00ff00' },
-    { r: 255, g: 80, b: 0, w: 0, hex: '#ff5000' }, { r: 0, g: 0, b: 0, w: 255, hex: '#ffffff' }
-  ];
-
-  const savedTfl = JSON.parse(localStorage.getItem('i20n_web_tfl'));
-  if (savedTfl) { tflTon = savedTfl.ton; tagHell = savedTfl.tag; nachtHell = Math.min(savedTfl.nacht, 70); if (savedTfl.wel) welcomeTyp = savedTfl.wel; }
-
-  const effekte = [
-    "🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer",
-    "🏎️ 5. Pace-Car Doppel", "✨ 6. Dreifach-Blitzer", "🚓 7. US-Polizei", "🚨 8. Rundumleuchte",
-    "🌅 9. Sanft Einblenden", "🌇 10. Sanft Ausblenden", "🕯️ 11. Kerzenflackern", "⛈️ 12. Gewitter / Blitz",
-    "🆘 13. SOS-Signal", "🏁 14. i20N Performance", "🌈 15. Regenbogen Sanft", "🎉 16. Farb-Sprung",
-    "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch", "⚡ 19. Highway Lichthupe", "🌋 20. Plasma & Magma",
-    "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Laser"
-  ];
-
-  const welcomeEffekte = [
-    { id: 1, name: "🌅 1. Sanft Hochdimmen" }, { id: 2, name: "⚡ 2. Doppel-Blitz & Dim" },
-    { id: 3, name: "💓 3. Herzschlag-Start" }, { id: 4, name: "✨ 4. Stufen-Zündung" },
-    { id: 5, name: "💥 5. Triple Pulsing" }, { id: 6, name: "🌀 6. Hyper-Spool Fade" },
-    { id: 7, name: "🏁 7. Track-Scanner" }, { id: 8, name: "🚫 8. Aus (Sofort An)" }
-  ];
-
-  function akzeptiereDisclaimer() { document.getElementById('legalModal').style.display = 'none'; }
-
-  function verarbeiteChipDaten(datenString) {
-    if(datenString.startsWith("G:")) {
-      let teile = datenString.substring(2).split(',');
-      curGX = parseFloat(teile[0]); curGY = parseFloat(teile[1]);
-      document.getElementById('valGX').innerText = curGX.toFixed(2) + " G";
-      document.getElementById('valGY').innerText = curGY.toFixed(2) + " G";
-    }
-    else if(datenString == "FORCE_AUTO") {
-      if (!blockiereSensorsignale) {
-        activeFx = 0; stoppeTimerUi(); updateUI();
+    if (gforceSperreAktiv && (modus != 0 && modus != 20 && modus != 99)) {
+      float bewegungsStaerke = sqrt(gX*gX + gY*gY);
+      if (bewegungsStaerke > 0.35) { 
+        modus = 0; 
+        timerAktiv = false;
+        if (geraetVerbunden) {
+          pCharacteristic->setValue("FORCE_AUTO");
+          pCharacteristic->notify();
+        }
       }
     }
   }
 
-  function toggleGforceProtect() {
-    if (!gforceProtectAktiv) {
-      gforceProtectAktiv = true;
-      document.getElementById('btnGprotect').classList.add('active');
-      document.getElementById('gLabel').innerText = "🛡️ G-Kraft-Schutz AKTIV (Sperrt bei Fahrt)";
-      document.getElementById('gState').innerText = "✅ Aktiv";
-      setzeShowSperre(false);
-      senden("CALIB");
-      setTimeout(() => { senden("G_PROT:1"); }, 250);
-    } else {
-      gforceProtectAktiv = false;
-      document.getElementById('btnGprotect').classList.remove('active');
-      document.getElementById('gLabel').innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
-      document.getElementById('gState').innerText = "🚫 Inaktiv";
-      setzeShowSperre(true);
-      senden("G_PROT:0"); 
-    }
+  if (flashAktiv) { setzeLichtDirekt(255, 255, 255, 255); return; }
+  if (timerAktiv && (long)(jetzt - timerEnde) >= 0) { timerAktiv = false; modus = 0; }
+
+  int vz = map(geschwindigkeit, 1, 100, 55, 4);
+
+  if (modus == 0) {
+    if (digitalRead(PIN_ABBLENDLICHT) == HIGH) wendeTflAn(tflHellNacht); else wendeTflAn(tflHellTag);
   }
-
-  function sendeKalibrierung() { if(confirm("Auto steht absolut eben im Stillstand?")) senden("CALIB"); }
-
-  const btnFlash = document.getElementById('btnFlashHold');
-  const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
-  const stopFlash = (e) => { if (e) e.preventDefault(); btnFlash.classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
-  btnFlash.addEventListener('pointerdown', startFlash); btnFlash.addEventListener('pointerup', stopFlash); btnFlash.addEventListener('pointerleave', stopFlash); btnFlash.addEventListener('pointercancel', stopFlash);
-
-  function onTimerSliderChange() { timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
-  function senden(b) { if (!bleChar) return; let d = new TextEncoder().encode(b); try { if (bleChar.writeValueWithoutResponse) bleChar.writeValueWithoutResponse(d); else bleChar.writeValue(d); } catch (e) {} }
-  function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
-  function stoppeTimerUi() { if (timerUiInterval) clearInterval(timerUiInterval); timerMinuten = 0; document.getElementById('tmrSlider').value = 0; document.getElementById('tmrText').innerText = "0 Min (Aus)"; const badge = document.getElementById('timerCountdown'); badge.innerText = "Aus"; badge.classList.remove('running'); }
-  
-  function setzeShowSperre(g) { 
-    const banner = document.getElementById('lockBanner');
-    const content = document.getElementById('showContent');
-    if (g) { 
-      content.classList.add('locked'); banner.classList.remove('hidden'); 
-    } else { 
-      content.classList.remove('locked'); banner.classList.add('hidden'); 
-    } 
+  else if (modus == 99) {
+    // Verbleibe im Vorschau-Zustand
   }
-
-  async function gattVerbinden() {
-    if (!bleDevice) return;
-    try {
-      const server = await bleDevice.gatt.connect(), service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
-      bleChar = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
-      document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
-      bleChar.startNotifications().then(() => { bleChar.addEventListener('characteristicvaluechanged', (e) => { let s = new TextDecoder().decode(e.target.value); verarbeiteChipDaten(s); }); });
-    } catch (e) { bleChar = null; }
+  else if (modus == 20) {
+    unsigned long vergangen = jetzt - welcomeStartZeit;
+    int zielHell = (digitalRead(PIN_ABBLENDLICHT) == HIGH) ? tflHellNacht : tflHellTag;
+    if (vergangen >= 4000) { modus = 0; } 
+    else if (aktiverWelcomeTyp == 1) { float f = vergangen / 4000.0; wendeTflAn((int)(zielHell * f)); } 
+    else if (aktiverWelcomeTyp == 2) { if (vergangen < 90 || (vergangen > 200 && vergangen < 290)) wendeTflAn(zielHell); else if (vergangen >= 290) { float f = (vergangen - 290) / 3710.0; wendeTflAn((int)(zielHell * f)); } else wendeTflAn(0); } 
+    else if (aktiverWelcomeTyp == 3) { if (vergangen < 400) wendeTflAn((int)(zielHell * (vergangen / 400.0))); else if (vergangen < 800) wendeTflAn((int)(zielHell * (1.0 - ((vergangen - 400) / 400.0)))); else if (vergangen < 1100) wendeTflAn(0); else if (vergangen < 1500) wendeTflAn((int)(zielHell * ((vergangen - 1100) / 400.0))); else if (vergangen < 1900) wendeTflAn((int)(zielHell * (1.0 - ((vergangen - 1500) / 400.0)))); else { float f = (vergangen - 1900) / 2100.0; wendeTflAn((int)(zielHell * f)); } } 
+    else if (aktiverWelcomeTyp == 4) { if (vergangen < 1000) wendeTflAn((int)(zielHell * 0.25)); else if (vergangen < 2000) wendeTflAn((int)(zielHell * 0.50)); else if (vergangen < 3000) wendeTflAn((int)(zielHell * 0.75)); else wendeTflAn(zielHell); }
+    else if (aktiverWelcomeTyp == 5) { if (vergangen < 70 || (vergangen > 140 && vergangen < 210) || (vergangen > 280 && vergangen < 350)) wendeTflAn(zielHell); else if (vergangen >= 350) { float f = (vergangen - 350) / 3650.0; wendeTflAn((int)(zielHell * f)); } else wendeTflAn(0); }
+    else if (aktiverWelcomeTyp == 6) { if (vergangen < 300) { if ((vergangen / 40) % 2 == 0) wendeTflAn(zielHell * 0.3); else wendeTflAn(0); } else { float f = pow((vergangen - 300) / 3700.0, 3); wendeTflAn((int)(zielHell * f)); } }
+    else if (aktiverWelcomeTyp == 7) { if (vergangen < 150) wendeTflAn(zielHell); else if (vergangen < 1200) wendeTflAn(zielHell * 0.15); else if (vergangen < 2500) { float f = (sin((vergangen - 1200) * 0.005) + 1.0) / 2.0; wendeTflAn(zielHell * (0.15 + f * 0.4)); } else { float f = (vergangen - 2500) / 1500.0; wendeTflAn((int)(zielHell * (0.55 + f * 0.45))); } }
   }
-  function starteAutoReconnectSchleife() { if (reconnectTimer) reconnectTimer = setInterval(async () => { if (bleDevice && !bleDevice.gatt.connected) { document.getElementById('status').innerText = "🔄 Suche Scheinwerfer..."; document.getElementById('status').style.color = "#00b4d8"; await gattVerbinden(); } }, 3500); }
-
-  async function verbinden() {
-    try {
-      document.getElementById('status').innerText = "Suche Scheinwerfer..."; document.getElementById('status').style.color = "#9aa5b4";
-      bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ name: 'i20N Scheinwerfer' }], optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] });
-      bleDevice.addEventListener('gattserverdisconnected', () => { bleChar = null; document.getElementById('status').innerText = "🔄 Reichweite verlassen"; document.getElementById('status').style.color = "#00b4d8"; });
-      await gattVerbinden(); starteAutoReconnectSchleife();
-    } catch (err) { document.getElementById('status').innerText = "❌ Fehler: " + err.message; }
-  }
-
-  async function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); if (bleChar) await senden("AUTO"); }
-
-  const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
-  function zeichneFarbrad() { ctx.clearRect(0,0,canvas.width,canvas.height); for (let angle = 0; angle < 360; angle++) { const startAngle = (angle - 2) * Math.PI / 180, endAngle = angle * Math.PI / 180; ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, startAngle, endAngle); ctx.closePath(); const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius); grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, 'hsl(' + angle + ', 100%, 50%)'); ctx.fillStyle = grad; ctx.fill(); } if (lastX !== null && lastY !== null) { ctx.beginPath(); ctx.arc(lastX, lastY, 8, 0, 2 * Math.PI); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.stroke(); ctx.beginPath(); ctx.arc(lastX, lastY, 2, 0, 2 * Math.PI); ctx.fillStyle = '#000000'; ctx.fill(); } }
-  zeichneFarbrad();
-
-  function verarbeiteEingabeKoordinate(x, y) {
-    if (!bleChar) return;
-    if (!gforceProtectAktiv) {
-      alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz, um den Show-Modus freizuschalten!");
-      return;
-    }
-    const dx = x - radius, dy = y - radius, distanz = Math.sqrt(dx*dx + dy*dy); if (distanz > radius) return;
-    lastX = x; lastY = y; zeichneFarbrad();
-    let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
-    const saettigung = Math.min(100, Math.round((distanz / radius) * 100)), rgb = hslZuRgb(winkel, saettigung, 50);
-    if (rgb.r === 0 && rgb.g === 0 && rgb.b === 0) return;
-    currentHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1); currentRgbw = { r: rgb.r, g: rgb.g, b: rgb.b, w: 0 };
-    const p = document.getElementById('colorPreview'); if (p) { p.style.backgroundColor = currentHex; p.style.color = (rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114) > 186 ? '#000' : '#fff'; }
-    
-    blockiereSensorsignale = true;
-    const now = Date.now(); if (now - lastSend > 65) { lastSend = now; activeFx = 1; updateUI(); senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0"); }
-    setTimeout(() => { blockiereSensorsignale = false; }, 400);
-  }
-
-  let isDragging = false;
-  canvas.addEventListener('mousedown', (e) => { isDragging = true; const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); });
-  canvas.addEventListener('mousemove', (e) => { if (isDragging) { const rect = canvas.getBoundingClientRect(); verarbeiteEingabeKoordinate(e.clientX - rect.left, e.clientY - rect.top); } });
-  window.addEventListener('mouseup', () => isDragging = false);
-  canvas.addEventListener('touchstart', (e) => { isDragging = true; if (e.touches && e.touches.length > 0) { const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.clientX - rect.left, touch.clientY - rect.top); } }, { passive: false });
-  canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches && e.touches.length > 0) { e.preventDefault(); const rect = canvas.getBoundingClientRect(), touch = e.touches[0]; verarbeiteEingabeKoordinate(touch.clientX - rect.left, touch.clientY - rect.top); } }, { passive: false });
-  window.addEventListener('touchend', () => isDragging = false);
-
-  function hslZuRgb(h, s, l) { h /= 360; s /= 100; l /= 100; let r, g, b; if (s === 0) { r = g = b = l; } else { const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3); } return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) }; }
-  function hue2rgb(p, q, t) { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1/6) return p + (q - p) * 6 * t; if (t < 1/2) return q; if (t < 2/3) return p + (q - p) * (2/3 - t) * 6; return p; }
-  function onBriSliderChange() { showBri = parseInt(document.getElementById('briSlider').value); document.getElementById('briText').innerText = showBri + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; senden("BRI:" + showBri); } }
-  function onSpdSliderChange() { speed = parseInt(document.getElementById('spdSlider').value); document.getElementById('spdText').innerText = speed + '%'; const now = Date.now(); if (now - lastSend > 65) { lastSend = now; senden("SPD:" + speed); } }
-
-  function renderSlots() {
-    const container = document.getElementById('slotContainer'); container.innerHTML = '';
-    slots.forEach((s, idx) => {
-      const btn = document.createElement('button'); btn.className = 'slot-btn'; btn.style.backgroundColor = s.hex; btn.innerText = idx + 1;
-      let pressTimer; btn.onpointerdown = () => { pressTimer = setTimeout(() => { slots[idx] = { r: currentRgbw.r, g: currentRgbw.g, b: currentRgbw.b, w: currentRgbw.w, hex: currentHex }; localStorage.setItem('i20n_web_slots', JSON.stringify(slots)); renderSlots(); alert("Farbe gespeichert!"); }, 800); };
-      btn.onpointerup = () => clearTimeout(pressTimer); 
-      btn.onclick = () => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz!"); return; } blockiereSensorsignale = true; currentRgbw = { r: s.r, g: s.g, b: s.b, w: s.w }; currentHex = s.hex; lastX = null; lastY = null; zeichneFarbrad(); const p = document.getElementById('colorPreview'); if (p) p.style.backgroundColor = s.hex; activeFx = 1; updateUI(); senden("RGBW:" + s.r + "," + s.g + "," + s.b + "," + s.w); setTimeout(() => { blockiereSensorsignale = false; }, 400); };
-      container.appendChild(btn);
-    });
-  }
-
-  function renderEffekte() { const grid = document.getElementById('fxGrid'); grid.innerHTML = ''; effekte.forEach((name, idx) => { const id = idx + 1, btn = document.createElement('button'); btn.className = 'btn btn-fx' + (activeFx === id ? ' active' : ''); btn.innerText = name; btn.onclick = () => { if (!gforceProtectAktiv) { alert("⚠️ Bitte aktiviere zuerst oben den G-Kraft-Schutz!"); return; } blockiereSensorsignale = true; activeFx = id; updateUI(); senden("FX:" + id); setTimeout(() => { blockiereSensorsignale = false; }, 400); }; grid.appendChild(btn); }); }
-  function renderWelcomeEffekte() { const grid = document.getElementById('welcomeGrid'); grid.innerHTML = ''; welcomeEffekte.forEach((item) => { const btn = document.createElement('button'); btn.className = 'btn btn-fx' + (welcomeTyp === item.id ? ' active' : ''); if (item.id === 8) btn.style.gridColumn = "span 2"; btn.innerText = item.name; btn.onclick = async () => { if (!bleChar) { alert("Suche Verbindung!"); return; } blockiereSensorsignale = true; welcomeTyp = item.id; renderWelcomeEffekte(); await senden("WELTEST:" + item.id); setTimeout(() => { blockiereSensorsignale = false; }, 1500); }; grid.appendChild(btn); }); }
-  async function speichereWelcomeAufChip() { if (!bleChar) return; await senden("WELSET:" + welcomeTyp); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); alert("Welcome-Effekt gespeichert!"); }
-  function initTflSliders() { document.getElementById('tonSlider').value = tflTon; document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagSlider').value = tagHell; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtSlider').value = nachtHell; document.getElementById('nachtText').innerText = nachtHell + '%'; }
-  
-  function bTflMix(t) { 
-    let r = 0, g = 0, b = 0;
-    if (t < 50) {
-      let f = t / 50.0;
-      r = 255; g = Math.round(180 + (75 * f)); b = Math.round(60 + (195 * f));
-    } else {
-      let f = (t - 50) / 50.0;
-      r = Math.round(255 - (110 * f)); g = Math.round(255 - (20 * f)); b = 255;
-    }
-    return { r: r, g: g, b: b, w: 255 }; 
-  }
-  
-  function onTflSliderChange(q) { 
-    blockiereSensorsignale = true;
-    tflTon = parseInt(document.getElementById('tonSlider').value); tagHell = parseInt(document.getElementById('tagSlider').value); nachtHell = parseInt(document.getElementById('nachtSlider').value); document.getElementById('tonText').innerText = tflTon + '%'; document.getElementById('tagText').innerText = tagHell + '%'; document.getElementById('nachtText').innerText = nachtHell + '%'; 
-    const now = Date.now(); if (now - lastSend > 65) { lastSend = now; const mix = bTflMix(tflTon), f = (q === 'NACHT' ? nachtHell : tagHell) / 100; senden("RGBW_TFL:" + Math.round(mix.r * f) + "," + Math.round(mix.g * f) + "," + Math.round(mix.b * f) + "," + Math.round(mix.w * f)); } 
-    setTimeout(() => { blockiereSensorsignale = false; }, 400);
-  }
-  
-  async function speichereTflAufChip() { if (!bleChar) return; const mix = bTflMix(tflTon), tagVal = Math.round((tagHell / 100) * 255), nachtVal = Math.round((nachtHell / 100) * 255); await senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal); localStorage.setItem('i20n_web_tfl', JSON.stringify({ ton: tflTon, tag: tagHell, nacht: nachtHell, wel: welcomeTyp })); activeFx = 0; stoppeTimerUi(); updateUI(); alert("Standlicht gespeichert!"); }
-
-  setzeShowSperre(true); renderSlots(); renderEffekte(); renderWelcomeEffekte(); initTflSliders();
-</script>
-</body>
-</html>
+  else if (modus == 1) { setzeShowLicht(zielR, zielG, zielB, zielW); } 
+  else if (modus == 2) { if (jetzt - letzteZeit >= vz) { letzteZeit = jetzt; float f = (sin(schritt * 0.05) + 1.0) / 2.0; setzeShowLicht(zielR * f, zielG * f, zielB * f, zielW * f); schritt++; } } 
+  else if (modus == 3) { if (jetzt - letzteZeit >= (vz * 2)) { letzteZeit = jetzt; schritt = (schritt + 1) % 22; float f = 0.04; if (schritt == 1 || schritt == 2 || schritt == 5 || schritt == 6) f = (schritt < 3) ? 1.0 : 0.65; setzeShowLicht(zielR * f, zielG * f, zielB * f, zielW * f); } } 
+  else if (modus == 4) { if (jetzt - letzteZeit >= (vz * 2)) { letzteZeit = jetzt; schritt = !schritt; if (schritt) setzeShowLicht(zielR, zielG, zielB, zielW); else setzeShowLicht(0, 0, 0, 0); } } 
+  else if (modus == 5) { if (jetzt - letzteZeit >= (vz * 2)) { letzteZeit = jetzt; schritt = (schritt + 1) % 10; if (schritt == 0 || schritt == 2) setzeShowLicht(zielR, zielG, zielB, zielW); else setzeShowLicht(0, 0, 0, 0); } } 
+  else if (modus == 6) { if (jetzt - letzteZeit >= (vz * 2)) { letzteZeit = jetzt; schritt = (schritt + 1) % 14; if (schritt == 0 || schritt == 2 || schritt == 4) setzeShowLicht(zielR, zielG, zielB, zielW); else setzeShowLicht(0, 0, 0, 0); } }
+  else if (modus == 7) { if (jetzt - letzteZeit >= (vz * 2)) { letzteZeit = jetzt; schritt = (schritt + 1) % 8; if (schritt == 0 || schritt == 2) setzeShowLicht(0, 0, 255, 0); else if (schritt == 4 || schritt == 6) setzeShowLicht(255, 0, 0, 0); else setzeShowLicht(0, 0, 0, 0); } }
+  else if (modus == 8) { if (jetzt - letzteZeit >= vz) { letzteZeit = jetzt; float f = pow((sin(schritt * 0.08) + 1.0) / 2.0, 4); setzeShowLicht(zielR * f, zielG * f, zielB * f, zielW * f); schritt++; } }
+  else if (modus == 9) { if (jetzt - letzteZeit >= vz) { letzteZeit = jetzt; schritt = (schritt + 3) % 255; float f = schritt / 255.0; setzeShowLicht(zielR * f, zielG * f, zielB * f, zielW * f); } }
+  else if (modus == 10) { if jets - letzteZeit >= vz) { letzteZeit = jetzt; schritt = (schritt + 3) % 255; float f = (255 - schritt) / 255.0; setzeShowLicht(zielR * f, zielG * f, zielB * f, zielW * f); } }
+  else if (modus == 11) { if (jetzt - letzteZeit >= (vz * 2)) { letzteZeit = jetzt; float f = random(35, 100) / 100.0; setzeShowLicht(zielR * f, zielG * f, zielB * f, zielW * f); } }
+  else if (modus == 12) { if (jetzt - letzteZeit >= 40) { letzteZeit = jetzt; if (random(0, 100) > 94) setzeShowLicht(zielR, zielG, zielB, zielW); else setzeShowLicht(zielR * 0.03, zielG * 0.03, zielB * 0.03, zielW * 0.03); } }
+  else if (modus == 13) { if ((jetzt / 150) % 2 == 0) setzeShowLicht(zielR, zielG, zielB, zielW); else setzeShowLicht(0,0,0,0); }
+  else if (modus == 14) { if (jetzt - letzteZeit >= vz) { letzteZeit = jetzt; float f = (sin(schritt * 0.04) + 1.0) / 2.0; int r = 255 * (1.0 - f); int g = 168 * f; int b = 232 * f; setzeShowLicht(r, g, b, 0); schritt++; } }
+  else if (modus == 15) { if (jetzt - letzteZeit >= vz) { letzteZeit = jetzt; schritt = (schritt + 1) % 360; int r = 0, g = 0, b = 0; if (schritt < 120) { r = map(schritt, 0, 120, 255, 0); g = map(schritt, 0, 120, 0, 255); } else if (schritt < 240) { g = map(schritt, 120, 240, 255, 0); b = map(schritt, 120, 240, 0, 255); } else { b = map(schritt, 240, 360, 255, 0); r = map(schritt, 240, 360, 0, 255); } setzeShowLicht(r, g, b, 0); } }
+  else if (modus == 16) { if ((jetzt / 200) % 3 == 0) setzeShowLicht(255,0,0,0); else if ((jetzt / 200) % 3 == 1) setzeShowLicht(0,255,0,0); else setzeShowLicht(0,0,255,0); }
+  else if (modus == 17) { if (jetzt - letzteZeit >= 35) { letzteZeit = jetzt; int zufall = random(0, 100); if (zufall > 91) { setzeShowLicht(255, random(120, 220), 0, 180); } else { setzeShowLicht(45, 5, 0, 0); } } }
+  else if (modus == 18) { if (jetzt - letzteZeit >= 45) { letzteZeit = jetzt; int zufall = random(0, 100); if (zufall < 18) { setzeShowLicht(0, 0, 0, 0); } else if (zufall < 40) { setzeShowLicht(zielR * 0.4, zielG * 0.4, zielB * 0.4, zielW * 0.4); } else { setzeShowLicht(zielR, zielG, zielB, zielW); } } }
+  else if (modus == 19) { if (jetzt - letzteZeit >= 35) { letzteZeit = jetzt; schritt = (schritt + 1) % 12; if (schritt == 0 || schritt == 2 || schritt == 5) setzeLichtDirekt(255, 255, 255, 255); else if (schritt == 7 || schritt == 9) setzeShowLicht(zielR, zielG, zielB, zielW); else setzeShowLicht(0, 0, 0, 0); } }
+  else if (modus == 20) { if (jetzt - letzteZeit >= 35) { letzteZeit = jetzt; if (random(0, 100) > 94) setzeShowLicht(0, 180, 255, 255); else { int m = random(15, 60); setzeShowLicht(m + 40, m / 3, 0, 0); } } }
+  else if (modus == 21) { if (jetzt - letzteZeit >= (vz + 4)) { letzteZeit = jetzt; schritt = (schritt + 1) % 90; if (schritt < 60) { float f = pow(schritt / 60.0, 2); setzeShowLicht(0, 120 * f, 255 * f, 10 * f); } else if (schritt < 68) setzeShowLicht(255, 255, 255, 255); else setzeShowLicht(0, 0, 0, 0); } }
+  else if (modus == 22) { if (jetzt - letzteZeit >= (vz * 2)) { letzteZeit = jetzt; schritt = (schritt + 1) % 50; if (schritt < 15) setzeShowLicht(0, 0, 0, 30); else if (schritt == 18 || schritt == 22) setzeShowLicht(255, 0, 0, 0); else if (schritt >= 26 && schritt < 45) { float f = (schritt - 26) / 19.0; setzeShowLicht(zielR * f, zielG * f, zielB * f, zielW * f); } else setzeShowLicht(0, 0, 0, 0); } }
+  else if (modus == 23) { if (jetzt - letzteZeit >= (vz + 2)) { letzteZeit = jetzt; schritt = (schritt + 1) % 100; if (schritt < 70) { float f = schritt / 70.0; setzeShowLicht(140 * f, 0, 255 * f, 0); } else if (schritt < 92) { if (schritt % 2 == 0) setzeShowLicht(255, 255, 255, 255); else setzeShowLicht(80, 0, 180, 0); } else setzeShowLicht(255, 255, 255, 255); } }
+  else if (modus == 24) { if (jetzt - letzteZeit >= 40) { letzteZeit = jetzt; schritt = (schritt + 1) % 4; if (schritt == 0) setzeShowLicht(255, 0, 0, 0); else if (schritt == 1) setzeShowLicht(0, 255, 0, 0); else if (schritt == 2) setzeShowLicht(0, 0, 255, 0); else setzeShowLicht(0, 0, 0, 255); } }
+}
