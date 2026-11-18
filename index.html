@@ -44,7 +44,7 @@
     .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
     .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
     canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); background: transparent; }
-    .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: background-color 0.15s ease; }
     
     .slot-row { display: flex; justify-content: space-between; margin-top: 14px; padding: 0 4px; gap: 8px; width: 100%; }
     .slot-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); cursor: pointer; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); transition: 0.1s ease; }
@@ -166,7 +166,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.03</div>
+  <div class="version-footer">Ver. 1.04</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
@@ -194,6 +194,7 @@
     document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
     document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
   }
+  window.whitespaceTab = function(z) { wechselTab(z); };
 
   function senden(b) { 
     if (bleChar) {
@@ -244,7 +245,6 @@
     const badge = document.getElementById('timerCountdown'); if(badge) { badge.innerText = "Aus"; badge.classList.remove('running'); }
   }
 
-  // --- REINE CSS-RADIAL-ABSTUFUNG ---
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d');
   function zeichneFarbrad() {
     const r = canvas.width / 2;
@@ -261,23 +261,22 @@
     }
   }
 
-  // FIX VER. 1.03: Präzise, bildschirmunabhängige Touch-Erkennung
+  // FIX VER. 1.04: Ersten Touch-Index [0] für unfehlbare Finger-Erkennung auf Mobilgeräten deklariert
   function handleTouchFarbe(e) {
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
+    if (!e.touches || e.touches.length === 0) return;
     
-    // Berechne die genaue x/y Position relativ zum Canvas auf dem Smartphone-Display
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0]; // Greife explizit auf den ersten registrierten Finger zu
+    
     let x = touch.clientX - rect.left;
     let y = touch.clientY - rect.top;
     
-    // Dynamische Ermittlung des Mittelpunkts basierend auf der echten Display-Größe des Canvas
     const center = rect.width / 2;
     let dx = x - center;
     let dy = y - center;
     let dist = Math.sqrt(dx * dx + dy * dy);
     
-    // Wenn außerhalb des gezeichneten Rades berührt wird, brich sofort ab
     if (dist > center) return;
     
     let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
@@ -291,9 +290,10 @@
     let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW:" + rGbc.r + "," + rGbc.g + "," + rGbc.b + ",0"); }
   }
 
+  // FIX VER. 1.04: Slot-Buttons färben jetzt auch die obere Vorschau live ein
   function wähleSlotFarbe(r, g, b, hexStr) {
     const p = document.getElementById('colorPreview');
-    if (p) { p.style.backgroundColor = hexStr; p.style.color = '#fff'; }
+    if (p) { p.style.backgroundColor = hexStr; p.style.color = (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000' : '#fff'; }
     senden("RGBW:" + r + "," + g + "," + b + ",0");
   }
 
