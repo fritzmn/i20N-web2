@@ -43,8 +43,13 @@
     .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
     .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
     .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
-    canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); }
+    canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); background: transparent; }
     .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    
+    .slot-row { display: flex; justify-content: space-between; margin-top: 14px; padding: 0 4px; gap: 8px; }
+    .slot-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); cursor: pointer; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); transition: 0.1s ease; }
+    .slot-btn:active { transform: scale(0.9); border-color: #fff; }
+
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .btn-fx { background: linear-gradient(145deg, #2b313d 0%, #1c2028 100%); border: 1px solid rgba(255, 255, 255, 0.09); padding: 13px 8px; border-radius: 11px; font-size: 12px; font-weight: 700; text-align: left; padding-left: 11px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); color: white; }
     .btn-fx.active { background: linear-gradient(135deg, #00b4d8 0%, #e63946 100%); border: 1px solid #ffffff; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.45); }
@@ -58,7 +63,7 @@
     .timer-badge { background: linear-gradient(135deg, #252a34 0%, #181b22 100%); padding: 4px 10px; border-radius: 8px; font-size: 12px; color: var(--nblue); font-weight: 800; border: 1px solid rgba(0, 168, 232, 0.3); }
     .timer-badge.running { background: linear-gradient(135deg, rgba(230, 57, 70, 0.35) 0%, rgba(155, 11, 29, 0.45) 100%); color: #ffccd5; border: 1px solid var(--nred); }
     .hidden { display: none; }
-    .version-footer { position: fixed; bottom: 8px; right: 12px; font-size: 11px; color: #5a6578; font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px; pointer-events: none; z-index: 1000; }
+    .version-footer { position: fixed; bottom: 8px; right: 12px; font-size: 11px; color: #5a6578; font-weight: bold; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; pointer-events: none; z-index: 1000; }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
     .modal-box { background: linear-gradient(145deg, #1d222b 0%, #11141a 100%); border: 2px solid var(--nred); border-radius: 20px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 10px 30px rgba(230,57,70,0.3); text-align: center; }
     .modal-title { font-size: 20px; font-weight: 900; color: var(--nred); letter-spacing: 1px; margin-bottom: 14px; text-transform: uppercase; font-style: italic; }
@@ -93,7 +98,7 @@
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
     <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
+    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
@@ -113,6 +118,16 @@
           </div>
           <div class="sub-label"><span>☀️ Show-Helligkeit</span><span id="briText">100%</span></div>
           <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
+          
+          <!-- DIE 6 FARBSLOTS BUTTONS -->
+          <div class="slot-row">
+            <button class="slot-btn" style="background:#e63946;" onclick="wähleSlotFarbe(255,0,0,'#e63946')"></button>
+            <button class="slot-btn" style="background:#38b000;" onclick="wähleSlotFarbe(0,255,0,'#38b000')"></button>
+            <button class="slot-btn" style="background:#00a8e8;" onclick="wähleSlotFarbe(0,0,255,'#00a8e8')"></button>
+            <button class="slot-btn" style="background:#00f5d4;" onclick="wähleSlotFarbe(0,255,220,'#00f5d4')"></button>
+            <button class="slot-btn" style="background:#ff007f;" onclick="wähleSlotFarbe(255,0,127,'#ff007f')"></button>
+            <button class="slot-btn" style="background:#ffb703;" onclick="wähleSlotFarbe(255,183,3,'#ffb703')"></button>
+          </div>
         </div>
 
         <div id="fxContainerCard" class="card">
@@ -152,10 +167,9 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.01</div>
+  <div class="version-footer">Ver. 1.02</div>
 
 <script>
-  // --- 1. DATEN-DEKLARATION ---
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
   let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
 
@@ -169,7 +183,6 @@
   ];
   const welEffekte = ["🌅 1. Sanft Hochdimmen", "⚡ 2. Doppel-Blitz & Dim", "🚫 8. Aus (Sofort An)"];
 
-  // --- 2. INTERFACE ELEMENTE & TABS ---
   function akzeptiereDisclaimer() {
     document.getElementById('legalModal').style.display = 'none';
   }
@@ -182,8 +195,8 @@
     document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
     document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
   }
+  window.whitespaceTab = function(z) { wechselTab(z); };
 
-  // --- 3. BLUETOOTH FUNKTIONALITÄT ---
   function senden(b) { 
     if (bleChar) {
       bleChar.writeValueWithoutResponse(new TextEncoder().encode(b)).catch(()=>{});
@@ -202,11 +215,9 @@
 
   function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); senden("AUTO"); }
 
-  // --- 4. FLASH MANUELL ---
   const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; document.getElementById('btnFlashHold').classList.add('pressing'); senden("FLASH:1"); };
   const stopFlash = (e) => { if (e) e.preventDefault(); document.getElementById('btnFlashHold').classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
 
-  // --- 5. AUTOMATISCHER SHOW TIMER ---
   function onTimerSliderChange() { 
     timerMinuten = parseInt(document.getElementById('tmrSlider').value); 
     document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; 
@@ -235,20 +246,20 @@
     const badge = document.getElementById('timerCountdown'); if(badge) { badge.innerText = "Aus"; badge.classList.remove('running'); }
   }
 
-  // --- 6. MATHEMATISCHES FARBRAD (NEUKONSTRUKTION) ---
+  // --- NATIVE BLITZSCHNELLE FARBRAD-KONSTRUKTION MIT CSS-GRADIENT ---
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
   function zeichneFarbrad() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < canvas.width; i++) {
-      for (let j = 0; j < canvas.height; j++) {
-        let dx = i - radius, dy = j - radius, dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist <= radius) {
-          let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
-          let s = (dist / radius) * 100;
-          ctx.fillStyle = `hsl(${winkel}, ${s}%, 50%)`;
-          ctx.fillRect(i, j, 1, 1);
-        }
-      }
+    // Zeichne ein wunderschönes, natives Farbrad mittels radialer Abstufung über alle 360 Grad
+    for (let angle = 0; angle < 360; angle++) {
+      ctx.beginPath();
+      ctx.moveTo(radius, radius);
+      ctx.arc(radius, radius, radius, (angle - 2) * Math.PI / 180, (angle + 1) * Math.PI / 180);
+      let gradient = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(1, `hsl(${angle}, 100%, 50%)`);
+      ctx.fillStyle = gradient;
+      ctx.fill();
     }
   }
 
@@ -258,13 +269,22 @@
     let x = touch.clientX - rect.left, y = touch.clientY - rect.top;
     let dx = x - radius, dy = y - radius, dist = Math.sqrt(dx * dx + dy * dy);
     if (dist > radius) return;
+    
     let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
     let sat = Math.min(100, Math.round((dist / radius) * 100));
     let rGbc = hslZuRgb(winkel, sat, 50);
+    
     let hex = "#" + ((1 << 24) + (rGbc.r << 16) + (rGbc.g << 8) + rGbc.b).toString(16).slice(1);
     const p = document.getElementById('colorPreview');
     if (p) { p.style.backgroundColor = hex; p.style.color = (rGbc.r*0.299 + rGbc.g*0.587 + rGbc.b*0.114) > 186 ? '#000' : '#fff'; }
+    
     let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW:" + rGbc.r + "," + rGbc.g + "," + rGbc.b + ",0"); }
+  }
+
+  function wähleSlotFarbe(r, g, b, hexStr) {
+    const p = document.getElementById('colorPreview');
+    if (p) { p.style.backgroundColor = hexStr; p.style.color = '#fff'; }
+    senden("RGBW:" + r + "," + g + "," + b + ",0");
   }
 
   function hslZuRgb(h, s, l) {
