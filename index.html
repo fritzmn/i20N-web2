@@ -104,8 +104,8 @@
 
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
-    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
+    <button id="tabTfl" class="tab-btn" onclick="whitespaceTab('TFL')">☀️ Standlicht</button>
+    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
@@ -174,10 +174,9 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 3.00</div>
+  <div class="version-footer">Ver. 3.01</div>
 
 <script>
-  // --- 1. GLOBALE VARIABLEN ---
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
   let gforceProtectAktiv = false, lastX = null, lastY = null;
   let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
@@ -192,7 +191,6 @@
   ];
   const welEffekte = ["🌅 1. Sanft Hochdimmen", "⚡ 2. Doppel-Blitz & Dim", "🚫 8. Aus (Sofort An)"];
 
-  // --- 2. STANDARD INTERFACE LOGIK ---
   function akzeptiereDisclaimer() {
     document.getElementById('legalModal').style.display = 'none';
   }
@@ -205,38 +203,27 @@
     document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
     document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
   }
+  window.whitespaceTab = function(z) { wechselTab(z); };
 
-  // --- 3. BLUETOOTH KOMMUNIKATION ---
   function senden(b) { 
     if (bleChar) {
       bleChar.writeValueWithoutResponse(new TextEncoder().encode(b)).catch(()=>{});
     }
   }
 
-  async function verbinden() {
-    try {
-      document.getElementById('status').innerText = "Suche Scheinwerfer...";
-      bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ name: 'i20N Scheinwerfer' }], optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] });
-      const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
-      bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
-      document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
-      await bleChar.startNotifications();
-      bleChar.addEventListener('characteristicvaluechanged', (e) => { 
-        let rawStr = new TextDecoder().decode(e.target.value);
-        if (rawStr.startsWith("G:")) {
-          let t = rawStr.substring(2).split(',');
-          if(document.getElementById('valGX')) document.getElementById('valGX').innerText = parseFloat(t[0]).toFixed(2) + " G";
-          if(document.getElementById('valGY')) document.getElementById('valGY').innerText = parseFloat(t[1]).toFixed(2) + " G";
-        } else if (rawStr == "FORCE_AUTO") {
-          gforceProtectAktiv = false;
-          const btn = document.getElementById('btnGprotect');
-          btn.classList.remove('active'); btn.innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
-          document.getElementById('showContent').classList.add('locked');
-          document.getElementById('lockBanner').classList.remove('hidden');
-          activeFx = 0; stoppeTimerUi(); updateUI();
-        }
-      });
-    } catch (err) { document.getElementById('status').innerText = "❌ Fehler"; }
+  function verarbeiteChipDaten(msg) {
+    if (msg.startsWith("G:")) {
+      let t = msg.substring(2).split(',');
+      if(document.getElementById('valGX')) document.getElementById('valGX').innerText = parseFloat(t[0]).toFixed(2) + " G";
+      if(document.getElementById('valGY')) document.getElementById('valGY').innerText = parseFloat(t[1]).toFixed(2) + " G";
+    } else if (msg == "FORCE_AUTO") {
+      gforceProtectAktiv = false;
+      const btn = document.getElementById('btnGprotect');
+      btn.classList.remove('active'); btn.innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
+      document.getElementById('showContent').classList.add('locked');
+      document.getElementById('lockBanner').classList.remove('hidden');
+      activeFx = 0; stoppeTimerUi(); updateUI();
+    }
   }
 
   function toggleGforceProtect() {
@@ -255,13 +242,23 @@
     }
   }
 
+  async function verbinden() {
+    try {
+      document.getElementById('status').innerText = "Suche Scheinwerfer...";
+      bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ name: 'i20N Scheinwerfer' }], optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] });
+      const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+      bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+      document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
+      await bleChar.startNotifications();
+      bleChar.addEventListener('characteristicvaluechanged', (e) => { verarbeiteChipDaten(new TextDecoder().decode(e.target.value)); });
+    } catch (err) { document.getElementById('status').innerText = "❌ Fehler"; }
+  }
+
   function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); senden("AUTO"); }
 
-  // --- 4. FLASH LIVE-TRIGGER ---
   const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; document.getElementById('btnFlashHold').classList.add('pressing'); senden("FLASH:1"); };
   const stopFlash = (e) => { if (e) e.preventDefault(); document.getElementById('btnFlashHold').classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
 
-  // --- 5. SHOW TIMER SYSTEM ---
   function onTimerSliderChange() { 
     timerMinuten = parseInt(document.getElementById('tmrSlider').value); 
     document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; 
@@ -291,7 +288,6 @@
     const badge = document.getElementById('timerCountdown'); if(badge) { badge.innerText = "Aus"; badge.classList.remove('running'); }
   }
 
-  // --- 6. FARBRAD MATHEMATIK ---
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
   function zeichneFarbrad() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -329,7 +325,6 @@
   }
   function hue2rgb(p, q, t) { if(t<0) t+=1; if(t>1) t-=1; if(t<1/6) return p+(q-p)*6*t; if(t<1/2) return q; if(t<2/3) return p+(q-p)*(2/3-t)*6; return p; }
 
-  // --- 7. SLIDER-BERECHNUNG STANDLICHT ---
   function bTflMix(t) { return { r: t<50 ? 255 : Math.round(255-(110*(t-50)/50)), g: t<50 ? Math.round(180+75*(t/50)) : Math.round(255-20*(t-50)/50), b: t<50 ? Math.round(60+195*(t/50)) : 255, w: 255 }; }
 
   function onTflSliderChange() {
@@ -339,16 +334,14 @@
     let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW_TFL:" + Math.round(mix.r*f) + "," + Math.round(mix.g*f) + "," + Math.round(mix.b*f) + "," + Math.round(mix.w*f)); }
   }
 
-  // --- 8. SPEICHER-BEFEHLE ---
-  void function speichereTfl() {
+  function speichereTfl() {
     let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value), nacht = parseInt(document.getElementById('nachtSlider').value);
     let mix = bTflMix(ton), tagVal = Math.round((tag/100)*255), nachtVal = Math.round((nacht/100)*255);
     senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal);
     alert("Standlicht gespeichert!");
   }
-  void function speichereWelcome() { senden('WELSET:'+welcomeTyp); alert("Welcome gespeichert!"); }
+  function speichereWelcome() { senden('WELSET:'+welcomeTyp); alert("Welcome gespeichert!"); }
 
-  // --- 9. AUTOMATISCHE GITTER-GENERIERUNG ---
   function renderFx() {
     const g = document.getElementById('fxGrid'); g.innerHTML = '';
     effekte.forEach((name, i) => {
@@ -371,7 +364,6 @@
   }
   function onBriSliderChange() { let b = document.getElementById('briSlider').value; document.getElementById('briText').innerText = b+"%"; senden("BRI:"+b); }
 
-  // --- 10. INITIALISIERUNG ---
   zeichneFarbrad();
   canvas.addEventListener('touchstart', handleTouchFarbe, {passive: false});
   canvas.addEventListener('touchmove', handleTouchFarbe, {passive: false});
