@@ -98,7 +98,7 @@
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
     <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
+    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
@@ -167,14 +167,13 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.07</div>
+  <div class="version-footer">Ver. 1.20</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
   let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d');
   
-  // Slot-Speicher Variablen
   let gewählterSlotId = 0;
   let aktuellesRadR = 0, aktuellesRadG = 168, aktuellesRadB = 232;
 
@@ -211,13 +210,13 @@
   async function verbinden() {
     try {
       document.getElementById('status').innerText = "Suche Scheinwerfer...";
-      // Filter erweitert um die Verbindung für iPhones stabiler zu erzwingen
+      // PASSENDE SERVICE-UUID SYNCHRONISIERT FÜR GEÄNDERTE FUNK-IDENTITÄT
       bleDevice = await navigator.bluetooth.requestDevice({ 
         filters: [{ name: 'i20N Scheinwerfer' }], 
-        optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] 
+        optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914c'] 
       });
-      const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
-      bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+      const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914c');
+      bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a9');
       document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
     } catch (err) { document.getElementById('status').innerText = "❌ Fehler"; }
   }
@@ -295,7 +294,6 @@
     let sat = Math.min(100, Math.round((dist / center) * 100));
     let rGbc = hslZuRgb(winkel, sat, 50);
     
-    // Speichere die aktuelle Live-Farbe im RAM
     aktuellesRadR = rGbc.r; aktuellesRadG = rGbc.g; aktuellesRadB = rGbc.b;
     
     let hex = "#" + ((1 << 24) + (rGbc.r << 16) + (rGbc.g << 8) + rGbc.b).toString(16).slice(1);
@@ -305,7 +303,6 @@
     let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW:" + rGbc.r + "," + rGbc.g + "," + rGbc.b + ",0"); }
   }
 
-  // Überarbeitete Slot-Funktion
   function klickSlot(id, r, g, b, hexStr) {
     gewählterSlotId = id;
     document.querySelectorAll('.slot-btn').forEach(btn => btn.classList.remove('selected'));
@@ -320,7 +317,6 @@
   function speichereAktivenSlot() {
     let hexColor = document.getElementById('colorPreview').style.backgroundColor;
     document.getElementById('slot' + gewählterSlotId).style.backgroundColor = hexColor;
-    // Sende den neuen Speicher-String an den Chip (SLOT:ID,R,G,B)
     senden("SLOTSET:" + gewählterSlotId + "," + aktuellesRadR + "," + aktuellesRadG + "," + aktuellesRadB);
   }
 
