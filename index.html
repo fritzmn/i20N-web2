@@ -124,9 +124,9 @@
                 <div class="slot" id="slot0" onclick="loadSlot(0)" oncontextmenu="saveSlot(0); return false;">Slot 1</div>
                 <div class="slot" id="slot1" onclick="loadSlot(1)" oncontextmenu="saveSlot(1); return false;">Slot 2</div>
                 <div class="slot" id="slot2" onclick="loadSlot(2)" oncontextmenu="saveSlot(2); return false;">Slot 3</div>
-                <div class="slot" id="slot3" onclick="loadSlot(3)" oncontextmenu="saveSlot(3); return false;">Slot 4</div>
-                <div class="slot" id="slot4" onclick="loadSlot(4)" oncontextmenu="saveSlot(4); return false;">Slot 5</div>
-                <div class="slot" id="slot5" onclick="loadSlot(5)" oncontextmenu="saveSlot(5); return false;">Slot 6</div>
+                <div class="slot" id="slot3" onclick="testColor(0,0,255)">Rein Blau</div>
+                <div class="slot" id="slot4" onclick="testColor(255,0,0)">Rein Rot</div>
+                <div class="slot" id="slot5" onclick="testColor(0,255,0)">Rein Grün</div>
             </div>
 
             <h4>Lichteffekte (Im Stand)</h4>
@@ -148,6 +148,7 @@
         let safetyActive = false;
         let slots = JSON.parse(localStorage.getItem('drl_slots')) || [null, null, null, null, null, null];
         window.currentRGB = {r: 0, g: 0, b: 0}; 
+        let isColorWheelActive = false;
 
         const canvas = document.getElementById('colorWheel');
         const ctx = canvas.getContext('2d');
@@ -172,33 +173,36 @@
                 let angle = Math.atan2(y, x) * 180 / Math.PI + 90;
                 if (angle < 0) angle += 360;
                 
-                let rgb = hslToRgb(angle/360, 1, 0.5);
-                window.currentRGB = rgb;
+                isColorWheelActive = true;
+                window.currentRGB = hslToRgb(angle/360, 1, 0.5); // Erzwingt 100% Sättigung
                 updateLight();
             }
         });
 
         function hslToRgb(h, s, l) {
             let r, g, b;
-            if (s == 0) { r = g = b = l; } else {
-                const hue2rgb = (p, q, t) => {
-                    if (t < 0) t += 1; if (t > 1) t -= 1;
-                    if (t < 1/6) return p + (q - p) * 6 * t;
-                    if (t < 1/2) return q;
-                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-                    return p;
-                };
-                let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                let p = 2 * l - q;
-                r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
-            }
+            let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            let p = 2 * l - q;
+            const hue2rgb = (p, q, t) => {
+                if (t < 0) t += 1; if (t > 1) t -= 1;
+                if (t < 1/6) return p + (q - p) * 6 * t;
+                if (t < 1/2) return q;
+                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                return p;
+            };
+            r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
             return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
+        }
+
+        function testColor(r,g,b) {
+            isColorWheelActive = true;
+            window.currentRGB = {r: r, g: g, b: b};
+            updateLight();
         }
 
         async function connectBLE() {
             try {
                 document.getElementById('statusText').innerText = "Suche läuft...";
-                // Gezielter Filter nach der UUID, das erhöht die Chance im Bluefy Browser drastisch!
                 bleDevice = await navigator.bluetooth.requestDevice({
                     filters: [{ services: [SERVICE_UUID] }] 
                 });
@@ -249,25 +253,28 @@
             let rOut = window.currentRGB.r;
             let gOut = window.currentRGB.g;
             let bOut = window.currentRGB.b;
-            let wOut = 255; 
+            let wOut = 0; 
 
-            if(rOut === 0 && gOut === 0 && bOut === 0) {
+            // Wenn das Farbrad NICHT aktiv ist, steuert der WhiteSlider die Farbtemperatur (Standlicht)
+            if(!isColorWheelActive) {
+                wOut = 255; 
                 if (sliderW < 128) {
-                    rOut = Math.round((127 - sliderW) * 1.5);
-                    gOut = Math.round((127 - sliderW) * 0.8);
+                    rOut = Math.round((127 - sliderW) * 1.8);
+                    gOut = Math.round((127 - sliderW) * 0.9);
                     bOut = 0;
                     document.getElementById('wVal').innerText = "Warmweiß";
                 } else if (sliderW > 128) {
                     rOut = 0;
                     gOut = 0;
-                    bOut = Math.round((sliderW - 128) * 1.5);
+                    bOut = Math.round((sliderW - 128) * 1.8);
                     document.getElementById('wVal').innerText = "Kaltweiß";
                 } else {
+                    rOut = 0; gOut = 0; bOut = 0;
                     document.getElementById('wVal').innerText = "Neutralweiß";
                 }
             } else {
                 document.getElementById('wVal').innerText = "Farbe aktiv";
-                wOut = sliderW; 
+                wOut = 0; // Schaltet den echten Weiß-Kanal ab, damit RGB knallig leuchtet
             }
             
             document.getElementById('bVal').innerText = Math.round(b/2.55) + "%";
@@ -316,6 +323,7 @@
 
         function loadSlot(index) {
             if(slots[index]) {
+                isColorWheelActive = true;
                 window.currentRGB = slots[index].rgb;
                 document.getElementById('whiteSlider').value = slots[index].w;
                 updateLight();
@@ -325,7 +333,7 @@
         function updateSlotUI() {
             slots.forEach((slot, i) => {
                 const el = document.getElementById('slot' + i);
-                if(slot) {
+                if(slot && i < 3) { // Nur die ersten 3 Slots zeigen gespeicherte Presets
                     el.style.borderStyle = "solid";
                     el.style.borderColor = "#00a8ff";
                     el.style.backgroundColor = `rgb(${slot.rgb.r}, ${slot.rgb.g}, ${slot.rgb.b})`;
