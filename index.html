@@ -36,25 +36,15 @@
     .btn:active { transform: scale(0.97); }
     .btn-connect { background: linear-gradient(135deg, #00b4d8 0%, #005f99 100%); margin-bottom: 10px; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.35); }
     .btn-auto { background: linear-gradient(135deg, #38b000 0%, #007200 100%); font-size: 15px; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(56, 176, 0, 0.35); }
-    .btn-calib { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); font-size: 13px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
-    .btn-gprotect { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; box-shadow: 0 4px 14px rgba(239, 35, 60, 0.35); }
-    .btn-gprotect.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; box-shadow: 0 4px 14px rgba(0, 150, 199, 0.4); }
-    .active-border { outline: 2px solid #ffffff; }
     .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); width: 100%; }
     .btn-flash.pressing { background: #ffffff; color: #000000; text-shadow: none; }
     
-    .locked { opacity: 0.28; filter: grayscale(90%); pointer-events: none !important; }
-    .lock-banner { background: linear-gradient(135deg, rgba(230, 57, 70, 0.22) 0%, rgba(155, 11, 29, 0.25) 100%); border: 1px solid var(--nred); color: #ffccd5; padding: 11px; border-radius: 12px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; z-index: 10; }
     .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
     .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
     .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
     canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); }
     .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-    .g-box { display: flex; justify-content: space-around; background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 10px; }
-    .g-item { text-align: center; }
-    .g-label { font-size: 11px; color: var(--sub); font-weight: 700; display: block; margin-bottom: 4px; }
-    .g-val { font-size: 18px; font-weight: 900; color: #ffffff; font-style: italic; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .btn-fx { background: linear-gradient(145deg, #2b313d 0%, #1c2028 100%); border: 1px solid rgba(255, 255, 255, 0.09); padding: 13px 8px; border-radius: 11px; font-size: 12px; font-weight: 700; text-align: left; padding-left: 11px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); color: white; }
     .btn-fx.active { background: linear-gradient(135deg, #00b4d8 0%, #e63946 100%); border: 1px solid #ffffff; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.45); }
@@ -82,8 +72,7 @@
     <div class="modal-box">
       <div class="modal-title">⚠️ WICHTIGER DISCLAIMER</div>
       <div class="modal-text">
-        Dieses DRL-Steuerungsmodul und die hiermit erzeugten Lichteffekte sowie benutzerdefinierten Farben sind <strong>im Bereich der StVZO (Straßenverkehrsordnung) NICHT zugelassen</strong>. Die Nutzung ist ausschließlich für Show-Fahrzeuge, Tuning-Treffen und Motorsport-Zwecke auf abgesperrtem Privatgelände gestattet.<br><br>
-        Es wird <strong>keinerlei Haftung</strong> für Bußgelder, Stilllegungen oder Schäden übernommen, falls dieses System missbräuchlich im öffentlichen Straßenverkehr verwendet wird. Zur rechtlichen Absicherung ist das Modul mit einem integrierten G-Kraft-Sensor ausgestattet, welcher bunte Lichtspielereien bei Bewegung automatisch unterbindet.
+        Dieses DRL-Steuerungsmodul und die hiermit erzeugten Lichteffekte sowie benutzerdefinierten Farben sind <strong>im Bereich der StVZO (Straßenverkehrsordnung) NICHT zugelassen</strong>. Die Nutzung ist ausschließlich für Show-Fahrzeuge, Tuning-Treffen und Motorsport-Zwecke auf abgesperrtem Privatgelände gestattet.
       </div>
       <button class="modal-btn" onclick="akzeptiereDisclaimer()">Ich verstehe & akzeptiere</button>
     </div>
@@ -99,29 +88,18 @@
   <div class="card">
     <button class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
     <button id="btnAuto" class="btn btn-auto active-border" onclick="aktiviereAuto()">☀️ TAGESFAHRLICHT MODUS</button>
-    <button id="btnGprotect" class="btn btn-gprotect" onclick="toggleGforceProtect()">🔒 G-Kraft-Schutz für Show-Modus AUS</button>
   </div>
 
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
-    <button id="tabTfl" class="tab-btn" onclick="whitespaceTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
+    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
+    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
     
     <div id="viewShow">
-      <div id="lockBanner" class="lock-banner">🔒 Show-Farben & Effekte gesperrt: Bitte oben den G-Kraft-Schutz für den Show-Modus einschalten!</div>
-      <div id="showContent" class="locked">
-        <div class="card">
-          <div class="card-title"><span>🏁 Telemetrie / G-Force Werte</span></div>
-          <div class="g-box">
-            <div class="g-item"><span class="g-label">SEITENKRAFT (X-ACHSE)</span><span id="valGX" class="g-val">0.00 G</span></div>
-            <div class="g-item"><span class="g-label">LÄNGSKRAFT (Y-ACHSE)</span><span id="valGY" class="g-val">0.00 G</span></div>
-          </div>
-          <button class="btn btn-calib" onclick="senden('CALIB')">📍 Sensor im Stillstand nullen</button>
-        </div>
-
+      <div id="showContent">
         <div class="card">
           <div class="card-title"><span>🕹️ Live-Trigger</span></div>
           <button id="btnFlashHold" class="btn btn-flash">⚡ FLASH HOLD <span style="font-size:11px; font-weight:normal;">(Gedrückt halten)</span></button>
@@ -174,11 +152,11 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 3.01</div>
+  <div class="version-footer">Ver. 1.01</div>
 
 <script>
+  // --- 1. DATEN-DEKLARATION ---
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
-  let gforceProtectAktiv = false, lastX = null, lastY = null;
   let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
 
   const effekte = [
@@ -191,6 +169,7 @@
   ];
   const welEffekte = ["🌅 1. Sanft Hochdimmen", "⚡ 2. Doppel-Blitz & Dim", "🚫 8. Aus (Sofort An)"];
 
+  // --- 2. INTERFACE ELEMENTE & TABS ---
   function akzeptiereDisclaimer() {
     document.getElementById('legalModal').style.display = 'none';
   }
@@ -203,42 +182,11 @@
     document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
     document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
   }
-  window.whitespaceTab = function(z) { wechselTab(z); };
 
+  // --- 3. BLUETOOTH FUNKTIONALITÄT ---
   function senden(b) { 
     if (bleChar) {
       bleChar.writeValueWithoutResponse(new TextEncoder().encode(b)).catch(()=>{});
-    }
-  }
-
-  function verarbeiteChipDaten(msg) {
-    if (msg.startsWith("G:")) {
-      let t = msg.substring(2).split(',');
-      if(document.getElementById('valGX')) document.getElementById('valGX').innerText = parseFloat(t[0]).toFixed(2) + " G";
-      if(document.getElementById('valGY')) document.getElementById('valGY').innerText = parseFloat(t[1]).toFixed(2) + " G";
-    } else if (msg == "FORCE_AUTO") {
-      gforceProtectAktiv = false;
-      const btn = document.getElementById('btnGprotect');
-      btn.classList.remove('active'); btn.innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
-      document.getElementById('showContent').classList.add('locked');
-      document.getElementById('lockBanner').classList.remove('hidden');
-      activeFx = 0; stoppeTimerUi(); updateUI();
-    }
-  }
-
-  function toggleGforceProtect() {
-    gforceProtectAktiv = !gforceProtectAktiv;
-    const btn = document.getElementById('btnGprotect');
-    if (gforceProtectAktiv) {
-      btn.classList.add('active'); btn.innerText = "🛡️ G-Kraft-Schutz AKTIV";
-      document.getElementById('showContent').classList.remove('locked');
-      document.getElementById('lockBanner').classList.add('hidden');
-      senden("G_PROT:1");
-    } else {
-      btn.classList.remove('active'); btn.innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
-      document.getElementById('showContent').classList.add('locked');
-      document.getElementById('lockBanner').classList.remove('hidden');
-      senden("G_PROT:0");
     }
   }
 
@@ -249,16 +197,16 @@
       const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
       bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
       document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
-      await bleChar.startNotifications();
-      bleChar.addEventListener('characteristicvaluechanged', (e) => { verarbeiteChipDaten(new TextDecoder().decode(e.target.value)); });
     } catch (err) { document.getElementById('status').innerText = "❌ Fehler"; }
   }
 
   function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); senden("AUTO"); }
 
+  // --- 4. FLASH MANUELL ---
   const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; document.getElementById('btnFlashHold').classList.add('pressing'); senden("FLASH:1"); };
   const stopFlash = (e) => { if (e) e.preventDefault(); document.getElementById('btnFlashHold').classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
 
+  // --- 5. AUTOMATISCHER SHOW TIMER ---
   function onTimerSliderChange() { 
     timerMinuten = parseInt(document.getElementById('tmrSlider').value); 
     document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; 
@@ -275,8 +223,7 @@
         if (restMs <= 0) { 
           clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); 
         } else { 
-          const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); 
-          badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); 
+          badge.innerText = "⏳ " + Math.floor(restMs / 60000) + ":" + String(Math.floor((restMs % 60000) / 1000)).padStart(2, '0'); 
         } 
       }, 1000); 
     } else { stoppeTimerUi(); } 
@@ -288,31 +235,36 @@
     const badge = document.getElementById('timerCountdown'); if(badge) { badge.innerText = "Aus"; badge.classList.remove('running'); }
   }
 
+  // --- 6. MATHEMATISCHES FARBRAD (NEUKONSTRUKTION) ---
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
   function zeichneFarbrad() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    for (let angle = 0; angle < 360; angle++) {
-      ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, (angle-2)*Math.PI/180, angle*Math.PI/180);
-      let grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
-      grad.addColorStop(0, '#fff'); grad.addColorStop(1, 'hsl('+angle+',100%,50%)');
-      ctx.fillStyle = grad; ctx.fill();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < canvas.width; i++) {
+      for (let j = 0; j < canvas.height; j++) {
+        let dx = i - radius, dy = j - radius, dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= radius) {
+          let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
+          let s = (dist / radius) * 100;
+          ctx.fillStyle = `hsl(${winkel}, ${s}%, 50%)`;
+          ctx.fillRect(i, j, 1, 1);
+        }
+      }
     }
   }
 
   function handleTouchFarbe(e) {
-    if (!gforceProtectAktiv) return;
     e.preventDefault();
     const rect = canvas.getBoundingClientRect(), touch = e.touches[0];
     let x = touch.clientX - rect.left, y = touch.clientY - rect.top;
-    let dx = x - radius, dy = y - radius, dist = Math.sqrt(dx*dx + dy*dy);
+    let dx = x - radius, dy = y - radius, dist = Math.sqrt(dx * dx + dy * dy);
     if (dist > radius) return;
     let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
-    let s = Math.min(100, Math.round((dist/radius)*100));
-    let rgb = hslZuRgb(winkel, s, 50);
-    let currentHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+    let sat = Math.min(100, Math.round((dist / radius) * 100));
+    let rGbc = hslZuRgb(winkel, sat, 50);
+    let hex = "#" + ((1 << 24) + (rGbc.r << 16) + (rGbc.g << 8) + rGbc.b).toString(16).slice(1);
     const p = document.getElementById('colorPreview');
-    if (p) { p.style.backgroundColor = currentHex; p.style.color = (rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114) > 186 ? '#000' : '#fff'; }
-    let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0"); }
+    if (p) { p.style.backgroundColor = hex; p.style.color = (rGbc.r*0.299 + rGbc.g*0.587 + rGbc.b*0.114) > 186 ? '#000' : '#fff'; }
+    let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW:" + rGbc.r + "," + rGbc.g + "," + rGbc.b + ",0"); }
   }
 
   function hslZuRgb(h, s, l) {
@@ -325,6 +277,7 @@
   }
   function hue2rgb(p, q, t) { if(t<0) t+=1; if(t>1) t-=1; if(t<1/6) return p+(q-p)*6*t; if(t<1/2) return q; if(t<2/3) return p+(q-p)*(2/3-t)*6; return p; }
 
+  // --- 7. REGELUNG STANDLICHT ---
   function bTflMix(t) { return { r: t<50 ? 255 : Math.round(255-(110*(t-50)/50)), g: t<50 ? Math.round(180+75*(t/50)) : Math.round(255-20*(t-50)/50), b: t<50 ? Math.round(60+195*(t/50)) : 255, w: 255 }; }
 
   function onTflSliderChange() {
@@ -342,6 +295,7 @@
   }
   function speichereWelcome() { senden('WELSET:'+welcomeTyp); alert("Welcome gespeichert!"); }
 
+  // --- 8. UI GENERIERUNG ---
   function renderFx() {
     const g = document.getElementById('fxGrid'); g.innerHTML = '';
     effekte.forEach((name, i) => {
@@ -364,12 +318,15 @@
   }
   function onBriSliderChange() { let b = document.getElementById('briSlider').value; document.getElementById('briText').innerText = b+"%"; senden("BRI:"+b); }
 
+  // --- 9. LIFECYCLE INITIALISIERUNG ---
   zeichneFarbrad();
   canvas.addEventListener('touchstart', handleTouchFarbe, {passive: false});
   canvas.addEventListener('touchmove', handleTouchFarbe, {passive: false});
   
   const fBtn = document.getElementById('btnFlashHold');
-  fBtn.addEventListener('pointerdown', startFlash); fBtn.addEventListener('pointerup', stopFlash); fBtn.addEventListener('pointerleave', stopFlash); fBtn.addEventListener('pointercancel', stopFlash);
+  if(fBtn) {
+    fBtn.addEventListener('pointerdown', startFlash); fBtn.addEventListener('pointerup', stopFlash); fBtn.addEventListener('pointerleave', stopFlash); fBtn.addEventListener('pointercancel', stopFlash);
+  }
 
   renderFx(); renderWelcome();
 </script>
