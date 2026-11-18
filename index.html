@@ -84,7 +84,6 @@
             font-size: 12px;
             cursor: pointer;
         }
-        .slot.saved { border-style: solid; border-color: #00a8ff; }
         .disabled { opacity: 0.3; pointer-events: none; }
         .status { font-size: 14px; color: #4cd137; margin-bottom: 10px; }
     </style>
@@ -97,17 +96,14 @@
     <button id="connectBtn" class="btn" onclick="connectBLE()">Mit Controller verbinden</button>
     <div id="statusText" class="status" style="color: #e84118;">Nicht verbunden</div>
 
-    <!-- Steuerungspanel (Gesperrt bis verbunden) -->
     <div id="mainControls" class="disabled">
         
-        <!-- G-Kraft Sicherheit -->
         <div class="card">
             <h3>Sicherheit & Sensoren</h3>
             <button id="safetyBtn" class="btn btn-secondary" onclick="toggleSafety()">Sensor aktivieren</button>
             <button class="btn btn-secondary" style="margin-top: 5px;" onclick="calibrateSensor()">Sensor Nullen (Kalibrieren)</button>
         </div>
 
-        <!-- Farbrad & Weißabgleich -->
         <div id="interactiveControls" class="card disabled">
             <h3>Farbe & Effekte</h3>
             <div class="color-picker-container">
@@ -153,7 +149,6 @@
         let slots = JSON.parse(localStorage.getItem('drl_slots')) || [null, null, null, null, null, null];
         window.currentRGB = {r: 0, g: 0, b: 0}; 
 
-        // Farbrad zeichnen
         const canvas = document.getElementById('colorWheel');
         const ctx = canvas.getContext('2d');
         const radius = canvas.width / 2;
@@ -202,10 +197,10 @@
 
         async function connectBLE() {
             try {
-                document.getElementById('statusText').innerText = "Suche...";
+                document.getElementById('statusText').innerText = "Suche läuft...";
+                // Gezielter Filter nach der UUID, das erhöht die Chance im Bluefy Browser drastisch!
                 bleDevice = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'i20N-DRL-Controller' }],
-                    optionalServices: [SERVICE_UUID]
+                    filters: [{ services: [SERVICE_UUID] }] 
                 });
 
                 bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
@@ -221,7 +216,7 @@
                 document.getElementById('mainControls').classList.remove('disabled');
                 updateSlotUI();
             } catch (error) {
-                document.getElementById('statusText').innerText = "Fehler beim Verbinden";
+                document.getElementById('statusText').innerText = "Fehler oder Suche abgebrochen";
                 document.getElementById('statusText').style.color = "#e84118";
             }
         }
@@ -256,16 +251,13 @@
             let bOut = window.currentRGB.b;
             let wOut = 255; 
 
-            // Wenn kein Farbrad gewählt wurde, mischen wir Warm/Kaltweiß über RGB+W
             if(rOut === 0 && gOut === 0 && bOut === 0) {
                 if (sliderW < 128) {
-                    // Warmweiß: Volles Weiß + Rot/Gelb-Beimischung
                     rOut = Math.round((127 - sliderW) * 1.5);
                     gOut = Math.round((127 - sliderW) * 0.8);
                     bOut = 0;
                     document.getElementById('wVal').innerText = "Warmweiß";
                 } else if (sliderW > 128) {
-                    // Kaltweiß: Volles Weiß + Blau-Beimischung
                     rOut = 0;
                     gOut = 0;
                     bOut = Math.round((sliderW - 128) * 1.5);
@@ -275,13 +267,12 @@
                 }
             } else {
                 document.getElementById('wVal').innerText = "Farbe aktiv";
-                wOut = sliderW; // Im Farbmodus dient der Schieberegler als Intensität der weißen LED
+                wOut = sliderW; 
             }
             
             document.getElementById('bVal').innerText = Math.round(b/2.55) + "%";
             document.getElementById('dVal').innerText = d + "%";
 
-            // Befehlsschlüssel 1 mit allen 6 Datenbytes explizit indiziert senden
             sendBLEData([1, rOut, gOut, bOut, wOut, b, d]);
         }
 
