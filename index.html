@@ -97,8 +97,8 @@
 
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
-    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
+    <button id="tabTfl" class="tab-btn" onclick="whitespaceTab('TFL')">☀️ Standlicht</button>
+    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
@@ -166,7 +166,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.04</div>
+  <div class="version-footer">Ver. 1.05</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
@@ -194,7 +194,6 @@
     document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
     document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
   }
-  window.whitespaceTab = function(z) { wechselTab(z); };
 
   function senden(b) { 
     if (bleChar) {
@@ -261,13 +260,13 @@
     }
   }
 
-  // FIX VER. 1.04: Ersten Touch-Index [0] für unfehlbare Finger-Erkennung auf Mobilgeräten deklariert
+  // FIX VER. 1.05: Reaktivierung des unfehlbaren ersten Finger-Index-Touch [0] für die Canvas-Matrix aus Ver. 2.00
   function handleTouchFarbe(e) {
     e.preventDefault();
     if (!e.touches || e.touches.length === 0) return;
     
     const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0]; // Greife explizit auf den ersten registrierten Finger zu
+    const touch = e.touches[0]; // Zwinge den Browser, den ersten aktiven Touchpoint auszulesen
     
     let x = touch.clientX - rect.left;
     let y = touch.clientY - rect.top;
@@ -290,7 +289,6 @@
     let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW:" + rGbc.r + "," + rGbc.g + "," + rGbc.b + ",0"); }
   }
 
-  // FIX VER. 1.04: Slot-Buttons färben jetzt auch die obere Vorschau live ein
   function wähleSlotFarbe(r, g, b, hexStr) {
     const p = document.getElementById('colorPreview');
     if (p) { p.style.backgroundColor = hexStr; p.style.color = (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000' : '#fff'; }
