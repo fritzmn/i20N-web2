@@ -124,9 +124,9 @@
                 <div class="slot" id="slot0" onclick="loadSlot(0)" oncontextmenu="saveSlot(0); return false;">Slot 1</div>
                 <div class="slot" id="slot1" onclick="loadSlot(1)" oncontextmenu="saveSlot(1); return false;">Slot 2</div>
                 <div class="slot" id="slot2" onclick="loadSlot(2)" oncontextmenu="saveSlot(2); return false;">Slot 3</div>
-                <div class="slot" id="slot3" onclick="testColor(0,0,255)">Rein Blau</div>
-                <div class="slot" id="slot4" onclick="testColor(255,0,0)">Rein Rot</div>
-                <div class="slot" id="slot5" onclick="testColor(0,255,0)">Rein Grün</div>
+                <div class="slot" id="slot3" onclick="testColor(255,0,0)">Rein Rot</div>
+                <div class="slot" id="slot4" onclick="testColor(0,255,0)">Rein Grün</div>
+                <div class="slot" id="slot5" onclick="testColor(0,0,255)">Rein Blau</div>
             </div>
 
             <h4>Lichteffekte (Im Stand)</h4>
@@ -174,7 +174,7 @@
                 if (angle < 0) angle += 360;
                 
                 isColorWheelActive = true;
-                window.currentRGB = hslToRgb(angle/360, 1, 0.5); // Erzwingt 100% Sättigung
+                window.currentRGB = hslToRgb(angle/360, 1, 0.5);
                 updateLight();
             }
         });
@@ -255,7 +255,6 @@
             let bOut = window.currentRGB.b;
             let wOut = 0; 
 
-            // Wenn das Farbrad NICHT aktiv ist, steuert der WhiteSlider die Farbtemperatur (Standlicht)
             if(!isColorWheelActive) {
                 wOut = 255; 
                 if (sliderW < 128) {
@@ -274,7 +273,7 @@
                 }
             } else {
                 document.getElementById('wVal').innerText = "Farbe aktiv";
-                wOut = 0; // Schaltet den echten Weiß-Kanal ab, damit RGB knallig leuchtet
+                wOut = 0; 
             }
             
             document.getElementById('bVal').innerText = Math.round(b/2.55) + "%";
@@ -301,8 +300,9 @@
             }
         }
 
+        // Korrigierte Befehl-Nummern für die Buttons
         function calibrateSensor() {
-            sendBLEData([3, 0]); 
+            sendBLEData([3]); 
             alert("Sensor kalibriert!");
         }
 
@@ -333,7 +333,7 @@
         function updateSlotUI() {
             slots.forEach((slot, i) => {
                 const el = document.getElementById('slot' + i);
-                if(slot && i < 3) { // Nur die ersten 3 Slots zeigen gespeicherte Presets
+                if(slot && i < 3) { 
                     el.style.borderStyle = "solid";
                     el.style.borderColor = "#00a8ff";
                     el.style.backgroundColor = `rgb(${slot.rgb.r}, ${slot.rgb.g}, ${slot.rgb.b})`;
