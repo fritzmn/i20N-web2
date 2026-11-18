@@ -1,237 +1,389 @@
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <Preferences.h>
-
-// --- PIN-BELEGUNG (ESP32-C3 SuperMini) ---
-const int PIN_ROT   = 3;  
-const int PIN_GRUEN = 4;  
-const int PIN_BLAU  = 1;  
-const int PIN_WEISS = 0;  
-const int PIN_ABBLENDLICHT = 5; 
-
-// SYNCHRONISIERTE IDENTITÄT FÜR DEINE WEB-APP
-#define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914c"
-#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
-
-Preferences memory;
-bool deviceConnected = false;
-bool oldConnected = false;
-
-// Standlicht-Variablen
-int tflR = 40, tflG = 60, tflB = 120, tflW = 255;
-int brTag = 255, brNacht = 55, welcomeTyp = 1;
-
-// Speicher-Arrays für die 6 Farbslots
-int slotR[6] = {255, 0, 0, 0, 255, 255};
-int slotG[6] = {0, 255, 0, 255, 0, 183};
-int slotB[6] = {0, 0, 255, 220, 127, 3};
-
-// Show-Variablen
-int modus = 0; 
-int showR = 0, showG = 168, showB = 232, showW = 0;
-int geschwindigkeit = 50;
-int helligkeitShow = 100;
-
-unsigned long zeitStempel = 0;
-int animationSchritt = 0;
-bool flashAktiv = false;
-unsigned long welcomeStart = 0;
-unsigned long timerDauerMs = 0;
-unsigned long timerStartMillis = 0;
-bool timerAktiv = false;
-
-void schreibePins(int r, int g, int b, int w) {
-  analogWrite(PIN_ROT, constrain(r, 0, 255));
-  analogWrite(PIN_GRUEN, constrain(g, 0, 255));
-  analogWrite(PIN_BLAU, constrain(b, 0, 255));
-  analogWrite(PIN_WEISS, constrain(w, 0, 255));
-}
-
-void zeigeShowFarbe(int r, int g, int b, int w) {
-  float faktor = helligkeitShow / 100.0;
-  schreibePins((int)(r * faktor), (int)(g * faktor), (int)(b * faktor), (int)(w * faktor));
-}
-
-void zeigeTflFarbe(int basisHelligkeit) {
-  float f = basisHelligkeit / 255.0;
-  schreibePins((int)(tflR * f), (int)(tflG * f), (int)(tflB * f), (int)(tflW * f));
-}
-
-class SystemServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) { deviceConnected = true; }
-    void onDisconnect(BLEServer* pServer) { deviceConnected = false; }
-};
-
-class DataInputCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pChar) {
-      String rxData = pChar->getValue();
-      if (rxData.length() == 0) return;
-      rxData.trim();
-      
-      if (rxData == "AUTO") {
-        modus = 0; timerAktiv = false; flashAktiv = false;
-      }
-      else if (rxData == "FLASH:1") { flashAktiv = true; }
-      else if (rxData == "FLASH:0") { flashAktiv = false; }
-      else if (rxData.startsWith("BRI:")) {
-        helligkeitShow = constrain(rxData.substring(4).toInt(), 0, 100);
-      }
-      else if (rxData.startsWith("TMR:")) {
-        int m = rxData.substring(4).toInt();
-        if (m > 0) {
-          timerDauerMs = (unsigned long)m * 60000UL;
-          timerStartMillis = millis();
-          timerAktiv = true;
-        } else { timerAktiv = false; }
-      }
-      else if (rxData.startsWith("FX:")) {
-        modus = rxData.substring(3).toInt();
-        animationSchritt = 0;
-      }
-      else if (rxData.startsWith("RGBW:")) {
-        modus = 1;
-        int idx1 = rxData.indexOf(':'), idx2 = rxData.indexOf(',', idx1+1), idx3 = rxData.indexOf(',', idx2+1), idx4 = rxData.indexOf(',', idx3+1);
-        showR = rxData.substring(idx1+1, idx2).toInt();
-        showG = rxData.substring(idx2+1, idx3).toInt();
-        showB = rxData.substring(idx3+1, idx4).toInt();
-        showW = rxData.substring(idx4+1).toInt();
-      }
-      else if (rxData.startsWith("SLOTSET:")) {
-        int p0 = rxData.indexOf(':'), p1 = rxData.indexOf(',', p0+1), p2 = rxData.indexOf(',', p1+1), p3 = rxData.indexOf(',', p2+1);
-        int id = rxData.substring(p0+1, p1).toInt();
-        if (id >= 0 && id < 6) {
-          slotR[id] = rxData.substring(p1+1, p2).toInt();
-          slotG[id] = rxData.substring(p2+1, p3).toInt();
-          slotB[id] = rxData.substring(p3+1).toInt();
-          
-          memory.begin("drl", false);
-          String keyR = "sr" + String(id); String keyG = "sg" + String(id); String keyB = "sb" + String(id);
-          memory.putInt(keyR.c_str(), slotR[id]);
-          memory.putInt(keyG.c_str(), slotG[id]);
-          memory.putInt(keyB.c_str(), slotB[id]);
-          memory.end();
-        }
-      }
-      else if (rxData.startsWith("RGBW_TFL:")) {
-        modus = 99;
-        int idx1 = rxData.indexOf(':'), idx2 = rxData.indexOf(',', idx1+1), idx3 = rxData.indexOf(',', idx2+1), idx4 = rxData.indexOf(',', idx3+1);
-        int r = rxData.substring(idx1+1, idx2).toInt();
-        int g = rxData.substring(idx2+1, idx3).toInt();
-        int b = rxData.substring(idx3+1, idx4).toInt();
-        int w = rxData.substring(idx4+1).toInt();
-        schreibePins(r, g, b, w);
-      }
-      else if (rxData.startsWith("WELTEST:")) {
-        welcomeTyp = rxData.substring(8).toInt();
-        if (welcomeTyp == 8) { modus = 0; } else { welcomeStart = millis(); modus = 20; }
-      }
-      else if (rxData.startsWith("WELSET:")) {
-        welcomeTyp = rxData.substring(7).toInt();
-        memory.begin("drl", false); memory.putInt("w", welcomeTyp); memory.end();
-      }
-      else if (rxData.startsWith("TFLSET:")) {
-        int p0 = rxData.indexOf(':'), p1 = rxData.indexOf(',', p0+1), p2 = rxData.indexOf(',', p1+1), p3 = rxData.indexOf(',', p2+1), p4 = rxData.indexOf(',', p3+1), p5 = rxData.indexOf(',', p4+1);
-        tflR = rxData.substring(p0+1, p1).toInt();
-        tflG = rxData.substring(p1+1, p2).toInt();
-        tflB = rxData.substring(p2+1, p3).toInt();
-        tflW = rxData.substring(p3+1, p4).toInt();
-        brTag = rxData.substring(p4+1, p5).toInt();
-        brNacht = rxData.substring(p5+1).toInt();
-        memory.begin("drl", false);
-        memory.putInt("r", tflR); memory.putInt("g", tflG); memory.putInt("b", tflB); memory.putInt("w", tflW);
-        memory.putInt("t", brTag); memory.putInt("n", brNacht);
-        memory.end();
-        modus = 0;
-      }
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>i20 N DRL Control</title>
+  <style>
+    :root {
+      --bg: #0b0d10;
+      --card: linear-gradient(145deg, #1b1f27 0%, #13161c 100%);
+      --nblue: #00a8e8;
+      --nred: #e63946;
+      --green: #2b9348;
+      --text: #f8f9fa;
+      --sub: #9aa5b4;
     }
-};
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top center, #18202c 0%, #090b0e 75%);
+      background-attachment: fixed;
+      color: var(--text);
+      margin: 0; padding: 16px;
+      display: flex; flex-direction: column; align-items: center;
+      position: relative; min-height: 100vh;
+    }
+    .header { text-align: center; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; }
+    .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    h1 { font-size: 24px; margin: 0; letter-spacing: 1.5px; font-weight: 900; font-style: italic; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 10px rgba(0, 168, 232, 0.35); }
+    .n-logo { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ff2a3c 0%, #9e0b18 100%); color: #ffffff; font-family: "Arial Black", Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 21px; padding: 1px 11px 2px 9px; transform: skewX(-18deg); border-radius: 4px; border-left: 3.5px solid #00b4d8; box-shadow: 0 3px 12px rgba(230, 57, 70, 0.65); letter-spacing: -1px; }
+    .n-logo span { transform: skewX(6deg); display: inline-block; }
+    #status { font-size: 13px; color: var(--sub); margin-top: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.04); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); }
+    .card { background: var(--card); border-radius: 18px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; border: 1px solid rgba(255, 255, 255, 0.07); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); position: relative; }
+    .card-title { font-size: 15px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.3px; }
+    .btn { width: 100%; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; color: white; transition: all 0.15s ease; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+    .btn:active { transform: scale(0.97); }
+    .btn-connect { background: linear-gradient(135deg, #00b4d8 0%, #005f99 100%); margin-bottom: 10px; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.35); }
+    .btn-auto { background: linear-gradient(135deg, #38b000 0%, #007200 100%); font-size: 15px; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(56, 176, 0, 0.35); }
+    .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); width: 100%; }
+    .btn-flash.pressing { background: #ffffff; color: #000000; text-shadow: none; }
+    
+    .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; z-index: 10; }
+    .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
+    .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
+    .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
+    canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); background: transparent; }
+    .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: background-color 0.15s ease; }
+    
+    .slot-row { display: flex; justify-content: space-between; margin-top: 14px; padding: 0 4px; gap: 8px; width: 100%; }
+    .slot-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); cursor: pointer; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); transition: 0.1s ease; position: relative; }
+    .slot-btn:active, .slot-btn.selected { transform: scale(0.9); border-color: #fff; box-shadow: 0 0 12px #fff; }
 
-void setup() {
-  delay(1000); 
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .btn-fx { background: linear-gradient(145deg, #2b313d 0%, #1c2028 100%); border: 1px solid rgba(255, 255, 255, 0.09); padding: 13px 8px; border-radius: 11px; font-size: 12px; font-weight: 700; text-align: left; padding-left: 11px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); color: white; }
+    .btn-fx.active { background: linear-gradient(135deg, #00b4d8 0%, #e63946 100%); border: 1px solid #ffffff; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.45); }
+    .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 600; }
+    input[type="range"] { -webkit-appearance: none; width: 100%; height: 11px; border-radius: 6px; background: linear-gradient(90deg, #1f242d 0%, #343c4a 100%); border: 1px solid rgba(255,255,255,0.08); outline: none; margin: 8px 0 4px 0; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 25px; height: 25px; border-radius: 50%; background: linear-gradient(135deg, #ffffff 0%, #d8e2dc 100%); border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 168, 232, 0.6); }
+    #tonSlider { background: linear-gradient(90deg, #ffd166 0%, #ffffff 50%, #4cc9f0 100%); }
+    #briSlider { background: linear-gradient(90deg, #161920 0%, #00b4d8 50%, #ffffff 100%); }
+    #tmrSlider { background: linear-gradient(90deg, #2b313d 0%, #7209b7 50%, #e63946 100%); }
+    .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #7a8594; margin-bottom: 6px; font-weight: 500; }
+    .timer-badge { background: linear-gradient(135deg, #252a34 0%, #181b22 100%); padding: 4px 10px; border-radius: 8px; font-size: 12px; color: var(--nblue); font-weight: 800; border: 1px solid rgba(0, 168, 232, 0.3); }
+    .timer-badge.running { background: linear-gradient(135deg, rgba(230, 57, 70, 0.35) 0%, rgba(155, 11, 29, 0.45) 100%); color: #ffccd5; border: 1px solid var(--nred); }
+    .hidden { display: none; }
+    .version-footer { position: fixed; bottom: 8px; right: 12px; font-size: 11px; color: #5a6578; font-weight: bold; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; pointer-events: none; z-index: 1000; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
+    .modal-box { background: linear-gradient(145deg, #1d222b 0%, #11141a 100%); border: 2px solid var(--nred); border-radius: 20px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 10px 30px rgba(230,57,70,0.3); text-align: center; }
+    .modal-title { font-size: 20px; font-weight: 900; color: var(--nred); letter-spacing: 1px; margin-bottom: 14px; text-transform: uppercase; font-style: italic; }
+    .modal-text { font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px; text-align: justify; }
+    .modal-btn { background: linear-gradient(135deg, #e63946 0%, #9e0b18 100%); color: white; padding: 12px; font-weight: 800; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; width: 100%; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+  </style>
+</head>
+<body>
 
-  pinMode(PIN_ROT, OUTPUT); pinMode(PIN_GRUEN, OUTPUT); pinMode(PIN_BLAU, OUTPUT); pinMode(PIN_WEISS, OUTPUT);
-  pinMode(PIN_ABBLENDLICHT, INPUT);
-  schreibePins(0, 0, 0, 0);
+  <div id="legalModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title">⚠️ WICHTIGER DISCLAIMER</div>
+      <div class="modal-text">
+        Dieses DRL-Steuerungsmodul und die hiermit erzeugten Lichteffekte sowie benutzerdefinierten Farben sind <strong>im Bereich der StVZO (Straßenverkehrsordnung) NICHT zugelassen</strong>. Die Nutzung ist ausschließlich für Show-Fahrzeuge, Tuning-Treffen und Motorsport-Zwecke auf abgesperrtem Privatgelände gestattet.
+      </div>
+      <button class="modal-btn" onclick="akzeptiereDisclaimer()">Ich verstehe & akzeptiere</button>
+    </div>
+  </div>
 
-  memory.begin("drl", true);
-  tflR = memory.getInt("r", 40); tflG = memory.getInt("g", 60); tflB = memory.getInt("b", 120); tflW = memory.getInt("w", 255);
-  brTag = memory.getInt("t", 255); brNacht = memory.getInt("n", 55); welcomeTyp = memory.getInt("w", 1);
-  for (int i = 0; i < 6; i++) {
-    String keyR = "sr" + String(i); String keyG = "sg" + String(i); String keyB = "sb" + String(i);
-    slotR[i] = memory.getInt(keyR.c_str(), slotR[i]);
-    slotG[i] = memory.getInt(keyG.c_str(), slotG[i]);
-    slotB[i] = memory.getInt(keyB.c_str(), slotB[i]);
-  }
-  memory.end();
+  <div class="header">
+    <div class="title-row">
+      <h1>i20 <span class="n-logo"><span>N</span></span> DRL CONTROL</h1>
+    </div>
+    <div id="status">Nicht verbunden</div>
+  </div>
 
-  if (welcomeTyp != 8) { welcomeStart = millis(); modus = 20; }
+  <div class="card">
+    <button class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
+    <button id="btnAuto" class="btn btn-auto active-border" onclick="aktiviereAuto()">☀️ TAGESFAHRLICHT MODUS</button>
+  </div>
 
-  // FIX VER. 1.22: Name radikal auf 4 Zeichen gekürzt, um die Apple BLE-Paketgrenze niemals zu sprengen!
-  BLEDevice::init("i20N");
-  BLEDevice::setPower(ESP_PWR_LVL_P9);
+  <div class="tab-row">
+    <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
+    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
+    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
+  </div>
+
+  <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
+    
+    <div id="viewShow">
+      <div id="showContent">
+        <div class="card">
+          <div class="card-title"><span>🕹️ Live-Trigger</span></div>
+          <button id="btnFlashHold" class="btn btn-flash">⚡ FLASH HOLD <span style="font-size:11px; font-weight:normal;">(Gedrückt halten)</span></button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>🎨 Freies Farbrad</span></div>
+          <div class="wheel-wrap">
+            <div id="colorPreview" class="wheel-preview-box">LIVE-FARBE</div>
+            <canvas id="colorWheel" width="220" height="220"></canvas>
+          </div>
+          <div class="sub-label"><span>☀️ Show-Helligkeit</span><span id="briText">100%</span></div>
+          <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
+          
+          <div class="slot-row">
+            <button id="slot0" class="slot-btn" style="background:#e63946;" onclick="klickSlot(0,255,0,0,'#e63946')"></button>
+            <button id="slot1" class="slot-btn" style="background:#38b000;" onclick="klickSlot(1,0,255,0,'#38b000')"></button>
+            <button id="slot2" class="slot-btn" style="background:#00a8e8;" onclick="klickSlot(2,0,0,255,'#00a8e8')"></button>
+            <button id="slot3" class="slot-btn" style="background:#00f5d4;" onclick="klickSlot(3,0,255,220,'#00f5d4')"></button>
+            <button id="slot4" class="slot-btn" style="background:#ff007f;" onclick="klickSlot(4,255,0,127,'#ff007f')"></button>
+            <button id="slot5" class="slot-btn" style="background:#ffb703;" onclick="klickSlot(5,255,183,3,'#ffb703')"></button>
+          </div>
+          <button class="btn" style="background:var(--green); margin-top:14px; padding:10px; font-size:12px;" onclick="speichereAktivenSlot()">💾 AUSGEWÄHLTEN SLOT IM CHIP SPEICHERN</button>
+        </div>
+
+        <div id="fxContainerCard" class="card">
+          <div class="card-title"><span>✨ 24 Show-Effekte</span></div>
+          <div class="grid" id="fxGrid"></div>
+        </div>
+
+        <div id="timerContainerCard" class="card">
+          <div class="card-title"><span>⏱️ Auto-Off Show-Timer</span><span id="timerCountdown" class="timer-badge">Aus</span></div>
+          <div class="sub-label"><span>Zeit bis zur Rückkehr auf Weiß</span><span id="tmrText">0 Min (Aus)</span></div>
+          <input type="range" id="tmrSlider" min="0" max="60" value="0" oninput="onTimerSliderChange()" onchange="sendeTimerAufChip()">
+          <div class="slider-hints"><span>Aus</span><span>15 Min</span><span>30 Min</span><span>60 Min</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewTfl" class="hidden">
+      <div class="card">
+        <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
+        <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
+        <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange()">
+        <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
+        <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit (Tag)</span><span id="tagText">100%</span></div>
+        <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange()">
+        <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht (Nacht)</span><span id="nachtText">20%</span></div>
+        <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange()">
+        <button class="btn" style="background:var(--green); margin-top:18px;" onclick="speichereTfl()">💾 STANDLICHT IM CHIP SPEICHERN</button>
+      </div>
+    </div>
+
+    <div id="viewWel" class="hidden">
+      <div class="card">
+        <div class="card-title"><span>👋 Welcome-Home Animation</span></div>
+        <div class="grid" id="welcomeGrid"></div>
+        <button class="btn" style="background:var(--green); margin-top:18px;" onclick="speichereWelcome()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="version-footer">Ver. 1.20</div>
+
+<script>
+  let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
+  let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
+  const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d');
   
-  BLEServer *pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new SystemServerCallbacks());
+  let gewählterSlotId = 0;
+  let aktuellesRadR = 0, aktuellesRadG = 168, aktuellesRadB = 232;
+
+  const effekte = [
+    "🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer",
+    "🏎️ 5. Pace-Car Doppel", "✨ 6. Dreifach-Blitzer", "🚓 7. US-Polizei", "🚨 8. Rundumleuchte",
+    "🌅 9. Sanft Einblenden", "🌇 10. Sanft Ausblenden", "🕯️ 11. Kerzenflackern", "⛈️ 12. Gewitter / Blitz",
+    "🆘 13. SOS-Signal", "🏁 14. i20N Performance", "🌈 15. Regenbogen Sanft", "🎉 16. Farb-Sprung",
+    "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch", "⚡ 19. Highway Lichthupe", "🌋 20. Plasma & Magma",
+    "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Laser"
+  ];
+  const welEffekte = ["🌅 1. Sanft Hochdimmen", "⚡ 2. Doppel-Blitz & Dim", "🚫 8. Aus (Sofort An)"];
+
+  function akzeptiereDisclaimer() {
+    document.getElementById('legalModal').style.display = 'none';
+  }
+
+  function wechselTab(z) {
+    document.getElementById('viewShow').className = z === 'SHOW' ? '' : 'hidden';
+    document.getElementById('viewTfl').className = z === 'TFL' ? '' : 'hidden';
+    document.getElementById('viewWel').className = z === 'WEL' ? '' : 'hidden';
+    document.getElementById('tabShow').className = 'tab-btn' + (z === 'SHOW' ? ' tab-active' : '');
+    document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
+    document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
+  }
+  window.whitespaceTab = function(z) { wechselTab(z); };
+
+  function senden(b) { 
+    if (bleChar) {
+      bleChar.writeValueWithoutResponse(new TextEncoder().encode(b)).catch(()=>{});
+    }
+  }
+
+  async function verbinden() {
+    try {
+      document.getElementById('status').innerText = "Suche Scheinwerfer...";
+      // PASSENDE SERVICE-UUID SYNCHRONISIERT FÜR GEÄNDERTE FUNK-IDENTITÄT
+      bleDevice = await navigator.bluetooth.requestDevice({ 
+        filters: [{ name: 'i20N Scheinwerfer' }], 
+        optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914c'] 
+      });
+      const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914c');
+      bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a9');
+      document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
+    } catch (err) { document.getElementById('status').innerText = "❌ Fehler"; }
+  }
+
+  function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); senden("AUTO"); }
+
+  const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; document.getElementById('btnFlashHold').classList.add('pressing'); senden("FLASH:1"); };
+  const stopFlash = (e) => { if (e) e.preventDefault(); document.getElementById('btnFlashHold').classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
+
+  function onTimerSliderChange() { 
+    timerMinuten = parseInt(document.getElementById('tmrSlider').value); 
+    document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; 
+  }
+  function sendeTimerAufChip() { 
+    senden("TMR:" + timerMinuten); 
+    if (timerUiInterval) clearInterval(timerUiInterval); 
+    const badge = document.getElementById('timerCountdown'); 
+    if (timerMinuten > 0) { 
+      timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); 
+      badge.classList.add('running'); 
+      timerUiInterval = setInterval(() => { 
+        const restMs = timerEndZeitpunkt - Date.now(); 
+        if (restMs <= 0) { 
+          clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); 
+        } else { 
+          badge.innerText = "⏳ " + Math.floor(restMs / 60000) + ":" + String(Math.floor((restMs % 60000) / 1000)).padStart(2, '0'); 
+        } 
+      }, 1000); 
+    } else { stoppeTimerUi(); } 
+  }
+  function stoppeTimerUi() { 
+    if (timerUiInterval) clearInterval(timerUiInterval); 
+    timerMinuten = 0; if(document.getElementById('tmrSlider')) document.getElementById('tmrSlider').value = 0; 
+    if(document.getElementById('tmrText')) document.getElementById('tmrText').innerText = "0 Min (Aus)"; 
+    const badge = document.getElementById('timerCountdown'); if(badge) { badge.innerText = "Aus"; badge.classList.remove('running'); }
+  }
+
+  function zeichneFarbrad() {
+    const r = canvas.width / 2;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let angle = 0; angle < 360; angle++) {
+      ctx.beginPath();
+      ctx.moveTo(r, r);
+      ctx.arc(r, r, r, (angle - 2) * Math.PI / 180, (angle + 1) * Math.PI / 180);
+      let gradient = ctx.createRadialGradient(r, r, 0, r, r, r);
+      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(1, `hsl(${angle}, 100%, 50%)`);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+  }
+
+  function handleTouchFarbe(e) {
+    if (e.preventDefault) e.preventDefault();
+    let currentTouch = null;
+    if (e.touches && e.touches.length > 0) {
+      currentTouch = e.touches[0];
+    } else if (e.clientX !== undefined) {
+      currentTouch = e;
+    }
+    if (!currentTouch) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    let x = currentTouch.clientX - rect.left;
+    let y = currentTouch.clientY - rect.top;
+    
+    const center = rect.width / 2;
+    let dx = x - center;
+    let dy = y - center;
+    let dist = Math.sqrt(dx * dx + dy * dy);
+    
+    if (dist > center) return;
+    
+    let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
+    let sat = Math.min(100, Math.round((dist / center) * 100));
+    let rGbc = hslZuRgb(winkel, sat, 50);
+    
+    aktuellesRadR = rGbc.r; aktuellesRadG = rGbc.g; aktuellesRadB = rGbc.b;
+    
+    let hex = "#" + ((1 << 24) + (rGbc.r << 16) + (rGbc.g << 8) + rGbc.b).toString(16).slice(1);
+    const p = document.getElementById('colorPreview');
+    if (p) { p.style.backgroundColor = hex; p.style.color = (rGbc.r*0.299 + rGbc.g*0.587 + rGbc.b*0.114) > 186 ? '#000' : '#fff'; }
+    
+    let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW:" + rGbc.r + "," + rGbc.g + "," + rGbc.b + ",0"); }
+  }
+
+  function klickSlot(id, r, g, b, hexStr) {
+    gewählterSlotId = id;
+    document.querySelectorAll('.slot-btn').forEach(btn => btn.classList.remove('selected'));
+    document.getElementById('slot' + id).classList.add('selected');
+    
+    aktuellesRadR = r; aktuellesRadG = g; aktuellesRadB = b;
+    const p = document.getElementById('colorPreview');
+    if (p) { p.style.backgroundColor = hexStr; p.style.color = (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000' : '#fff'; }
+    senden("RGBW:" + r + "," + g + "," + b + ",0");
+  }
+
+  function speichereAktivenSlot() {
+    let hexColor = document.getElementById('colorPreview').style.backgroundColor;
+    document.getElementById('slot' + gewählterSlotId).style.backgroundColor = hexColor;
+    senden("SLOTSET:" + gewählterSlotId + "," + aktuellesRadR + "," + aktuellesRadG + "," + aktuellesRadB);
+  }
+
+  function hslZuRgb(h, s, l) {
+    h /= 360; s /= 100; l /= 100; let r, g, b;
+    if (s === 0) { r = g = b = l; } else {
+      let q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
+    }
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+  }
+  function hue2rgb(p, q, t) { if(t<0) t+=1; if(t>1) t-=1; if(t<1/6) return p+(q-p)*6*t; if(t<1/2) return q; if(t<2/3) return p+(q-p)*(2/3-t)*6; return p; }
+
+  function bTflMix(t) { return { r: t<50 ? 255 : Math.round(255-(110*(t-50)/50)), g: t<50 ? Math.round(180+75*(t/50)) : Math.round(255-20*(t-50)/50), b: t<50 ? Math.round(60+195*(t/50)) : 255, w: 255 }; }
+
+  function onTflSliderChange() {
+    let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value), nacht = parseInt(document.getElementById('nachtSlider').value);
+    document.getElementById('tonText').innerText = ton+"%"; document.getElementById('tagText').innerText = tag+"%"; document.getElementById('nachtText').innerText = nacht+"%";
+    let mix = bTflMix(ton), f = tag/100;
+    let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW_TFL:" + Math.round(mix.r*f) + "," + Math.round(mix.g*f) + "," + Math.round(mix.b*f) + "," + Math.round(mix.w*f)); }
+  }
+
+  function speichereTfl() {
+    let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value), nacht = parseInt(document.getElementById('nachtSlider').value);
+    let mix = bTflMix(ton), tagVal = Math.round((tag/100)*255), nachtVal = Math.round((nacht/100)*255);
+    senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal);
+    alert("Standlicht gespeichert!");
+  }
+  function speichereWelcome() { senden('WELSET:'+welcomeTyp); alert("Welcome gespeichert!"); }
+
+  function renderFx() {
+    const g = document.getElementById('fxGrid'); g.innerHTML = '';
+    effekte.forEach((name, i) => {
+      let b = document.createElement('button'); b.className = 'btn btn-fx'; b.innerText = name;
+      b.onclick = () => { activeFx = (i+1); updateUI(); senden("FX:"+(i+1)); }; g.appendChild(b);
+    });
+  }
+  function renderWelcome() {
+    const g = document.getElementById('welcomeGrid'); g.innerHTML = '';
+    welEffekte.forEach((name) => {
+      let b = document.createElement('button'); b.className = 'btn btn-fx'; b.innerText = name;
+      let id = parseInt(name.match(/\d+/));
+      b.onclick = () => { welcomeTyp = id; senden("WELTEST:"+id); }; g.appendChild(b);
+    });
+  }
+  function updateUI() {
+    document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : '');
+    const buttons = document.querySelectorAll('#fxGrid .btn-fx');
+    buttons.forEach((b, i) => { if (activeFx === (i+1)) b.classList.add('active'); else b.classList.remove('active'); });
+  }
+  function onBriSliderChange() { let b = document.getElementById('briSlider').value; document.getElementById('briText').innerText = b+"%"; senden("BRI:"+b); }
+
+  zeichneFarbrad();
+  canvas.addEventListener('touchstart', handleTouchFarbe, {passive: false});
+  canvas.addEventListener('touchmove', handleTouchFarbe, {passive: false});
   
-  BLEService *pService = pServer->createService(SERVICE_UUID);
-  BLECharacteristic *pChar = pService->createCharacteristic(
-    CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
-  );
-  pChar->setCallbacks(new DataInputCallbacks());
-  pService->start();
+  let mouseActive = false;
+  canvas.addEventListener('mousedown', (e) => { mouseActive = true; handleTouchFarbe(e); });
+  canvas.addEventListener('mousemove', (e) => { if (mouseActive) handleTouchFarbe(e); });
+  window.addEventListener('mouseup', () => { mouseActive = false; });
   
-  BLEDevice::getAdvertising()->start();
-}
-
-void loop() {
-  if (!deviceConnected && oldConnected) { delay(250); BLEDevice::getAdvertising()->start(); oldConnected = deviceConnected; }
-  if (deviceConnected && !oldConnected) { oldConnected = deviceConnected; }
-
-  unsigned long ms = millis();
-
-  if (flashAktiv) { schreibePins(255, 255, 255, 255); return; }
-  if (timerAktiv && (ms - timerStartMillis >= timerDauerMs)) { timerAktiv = false; modus = 0; }
-
-  int dTime = map(geschwindigkeit, 1, 100, 55, 4);
-
-  if (modus == 0) {
-    if (digitalRead(PIN_ABBLENDLICHT) == HIGH) zeigeTflFarbe(brNacht); else zeigeTflFarbe(brTag);
+  const fBtn = document.getElementById('btnFlashHold');
+  if(fBtn) {
+    fBtn.addEventListener('pointerdown', startFlash); fBtn.addEventListener('pointerup', stopFlash); fBtn.addEventListener('pointerleave', stopFlash); fBtn.addEventListener('pointercancel', stopFlash);
   }
-  else if (modus == 99) {
-    // Justierung aktiv
-  }
-  else if (modus == 20) {
-    unsigned long diff = ms - welcomeStart;
-    int aktHelligkeit = (digitalRead(PIN_ABBLENDLICHT) == HIGH) ? brNacht : brTag;
-    if (diff >= 4000) { modus = 0; }
-    else if (welcomeTyp == 1) { schreibePins(0, 0, 0, (int)(aktHelligkeit * (diff / 4000.0))); }
-    else if (welcomeTyp == 2) { if (diff < 150 || (diff > 300 && diff < 450)) schreibePins(255,255,255,255); else schreibePins(0,0,0,0); }
-    else { zeigeTflFarbe(aktHelligkeit); }
-  }
-  else if (modus == 1) { zeigeShowFarbe(showR, showG, showB, showW); }
-  else if (modus == 2) { if (ms - zeitStempel >= dTime) { zeitStempel = ms; float f = (sin(animationSchritt * 0.05) + 1.0) / 2.0; zeigeShowFarbe(showR * f, showG * f, showB * f, showW * f); animationSchritt++; } }
-  else if (modus == 3) { if (ms - zeitStempel >= (dTime * 2)) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 22; float f = 0.04; if (animationSchritt == 1 || animationSchritt == 2 || animationSchritt == 5 || animationSchritt == 6) f = (animationSchritt < 3) ? 1.0 : 0.65; zeigeShowFarbe(showR * f, showG * f, showB * f, showW * f); } }
-  else if (modus == 4) { if (ms - zeitStempel >= (dTime * 2)) { zeitStempel = ms; animationSchritt = !animationSchritt; if (animationSchritt) zeigeShowFarbe(showR, showG, showB, showW); else zeigeShowFarbe(0,0,0,0); } }
-  else if (modus == 5) { if (ms - zeitStempel >= (dTime * 2)) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 10; if (animationSchritt == 0 || animationSchritt == 2) zeigeShowFarbe(showR, showG, showB, showW); else zeigeShowFarbe(0,0,0,0); } }
-  else if (modus == 6) { if (ms - zeitStempel >= (dTime * 2)) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 14; if (animationSchritt == 0 || animationSchritt == 2 || animationSchritt == 4) zeigeShowFarbe(showR, showG, showB, showW); else zeigeShowFarbe(0,0,0,0); } }
-  else if (modus == 7) { if (ms - zeitStempel >= (dTime * 2)) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 8; if (animationSchritt == 0 || animationSchritt == 2) zeigeShowFarbe(0, 0, 255, 0); else if (animationSchritt == 4 || animationSchritt == 6) zeigeShowFarbe(255, 0, 0, 0); else zeigeShowFarbe(0, 0, 0, 0); } }
-  else if (modus == 8) { if (ms - zeitStempel >= dTime) { zeitStempel = ms; float f = pow((sin(animationSchritt * 0.08) + 1.0) / 2.0, 4); zeigeShowFarbe(showR * f, showG * f, showB * f, showW * f); animationSchritt++; } }
-  else if (modus == 9) { if (ms - zeitStempel >= dTime) { zeitStempel = ms; animationSchritt = (animationSchritt + 3) % 255; float f = animationSchritt / 255.0; zeigeShowFarbe(showR * f, showG * f, showB * f, showW * f); } }
-  else if (modus == 10) { if (ms - zeitStempel >= dTime) { zeitStempel = ms; animationSchritt = (animationSchritt + 3) % 255; float f = (255 - animationSchritt) / 255.0; zeigeShowFarbe(showR * f, showG * f, showB * f, showW * f); } }
-  else if (modus == 11) { if (ms - zeitStempel >= (dTime * 2)) { zeitStempel = ms; float f = random(35, 100) / 100.0; zeigeShowFarbe(showR * f, showG * f, showB * f, showW * f); } }
-  else if (modus == 12) { if (ms - zeitStempel >= 40) { zeitStempel = ms; if (random(0, 100) > 94) zeigeShowFarbe(showR, showG, showB, showW); else zeigeShowFarbe(showR * 0.03, showG * 0.03, showB * 0.03, showW * 0.03); } }
-  else if (modus == 13) { if ((ms / 150) % 2 == 0) zeigeShowFarbe(showR, showG, showB, showW); else zeigeShowFarbe(0,0,0,0); }
-  else if (modus == 14) { if (ms - zeitStempel >= dTime) { zeitStempel = ms; float f = (sin(animationSchritt * 0.04) + 1.0) / 2.0; zeigeShowFarbe((int)(255 * (1.0 - f)), (int)(168 * f), (int)(232 * f), 0); animationSchritt++; } }
-  else if (modus == 15) { if (ms - zeitStempel >= dTime) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 360; int r=0, g=0, b=0; if (animationSchritt < 120) { r = map(animationSchritt, 0, 120, 255, 0); g = map(animationSchritt, 0, 120, 0, 255); } else if (animationSchritt < 240) { g = map(animationSchritt, 120, 240, 255, 0); b = map(animationSchritt, 120, 240, 0, 255); } else { b = map(animationSchritt, 240, 360, 255, 0); r = map(animationSchritt, 240, 360, 0, 255); } zeigeShowFarbe(r, g, b, 0); } }
-  else if (modus == 16) { if ((ms / 200) % 3 == 0) zeigeShowFarbe(255,0,0,0); else if ((ms / 200) % 3 == 1) zeigeShowFarbe(0,255,0,0); else zeigeShowFarbe(0,0,255,0); }
-  else if (modus == 17) { if (ms - zeitStempel >= 35) { zeitStempel = ms; if (random(0, 100) > 91) zeigeShowFarbe(255, random(120, 220), 0, 180); else zeigeShowFarbe(45, 5, 0, 0); } }
-  else if (modus == 18) { if (ms - zeitStempel >= 45) { zeitStempel = ms; int z = random(0, 100); if (z < 18) zeigeShowFarbe(0, 0, 0, 0); else if (z < 40) zeigeShowFarbe(showR * 0.4, showG * 0.4, showB * 0.4, showW * 0.4); else zeigeShowFarbe(showR, showG, showB, showW); } }
-  else if (modus == 19) { if (ms - zeitStempel >= 35) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 12; if (animationSchritt == 0 || animationSchritt == 2 || animationSchritt == 5) schreibePins(255, 255, 255, 255); else if (animationSchritt == 7 || animationSchritt == 9) zeigeShowFarbe(showR, showG, showB, showW); else zeigeShowFarbe(0, 0, 0, 0); } }
-  else if (modus == 20) { if (ms - zeitStempel >= 35) { zeitStempel = ms; if (random(0, 100) > 94) zeigeShowFarbe(0, 180, 255, 255); else { int m = random(15, 60); zeigeShowFarbe(m + 40, m / 3, 0, 0); } } }
-  else if (modus == 21) { if (ms - zeitStempel >= (dTime + 4)) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 90; if (animationSchritt < 60) { float f = pow(animationSchritt / 60.0, 2); zeigeShowFarbe(0, (int)(120 * f), (int)(255 * f), (int)(10 * f)); } else if (animationSchritt < 68) schreibePins(255, 255, 255, 255); else schreibePins(0, 0, 0, 0); } }
-  else if (modus == 22) { if (ms - zeitStempel >= (dTime * 2)) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 50; if (animationSchritt < 15) zeigeShowFarbe(0, 0, 0, 30); else if (animationSchritt == 18 || animationSchritt == 22) zeigeShowFarbe(255, 0, 0, 0); else if (animationSchritt >= 26 && animationSchritt < 45) { float f = (animationSchritt - 26) / 19.0; zeigeShowFarbe(showR * f, showG * f, showB * f, showW * f); } else zeigeShowFarbe(0, 0, 0, 0); } }
-  else if (modus == 23) { if (ms - zeitStempel >= (dTime + 2)) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 100; if (animationSchritt < 70) { float f = animationSchritt / 70.0; zeigeShowFarbe((int)(140 * f), 0, (int)(255 * f), 0); } else if (animationSchritt < 92) { if (animationSchritt % 2 == 0) schreibePins(255, 255, 255, 255); else zeigeShowFarbe(80, 0, 180, 0); } else schreibePins(255, 255, 255, 255); } }
-  else if (modus == 24) { if (ms - zeitStempel >= 40) { zeitStempel = ms; animationSchritt = (animationSchritt + 1) % 4; if (animationSchritt == 0) zeigeShowFarbe(255, 0, 0, 0); else if (animationSchritt == 1) zeigeShowFarbe(0, 255, 0, 0); else if (animationSchritt == 2) zeigeShowFarbe(0, 0, 255, 0); else zeigeShowFarbe(0, 0, 0, 255); } }
-}
+
+  renderFx(); renderWelcome();
+</script>
+</body>
+</html>
