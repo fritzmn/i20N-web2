@@ -10,6 +10,7 @@
       --card: linear-gradient(145deg, #1b1f27 0%, #13161c 100%);
       --nblue: #00a8e8;
       --nred: #e63946;
+      --green: #2b9348;
       --text: #f8f9fa;
       --sub: #9aa5b4;
     }
@@ -24,281 +25,337 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      position: relative;
       min-height: 100vh;
     }
     .header { text-align: center; margin-bottom: 12px; display: flex; flex-direction: column; align-items: center; }
     .title-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
     h1 { font-size: 24px; margin: 0; letter-spacing: 1.5px; font-weight: 900; font-style: italic; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 10px rgba(0, 168, 232, 0.35); }
-    .n-logo { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ff2a3c 0%, #9e0b18 100%); color: #ffffff; font-family: "Arial Black", Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 21px; padding: 1px 11px 2px 11px; transform: skewX(-18deg); border-radius: 4px; border-left: 3.5px solid #00b4d8; box-shadow: 0 3px 12px rgba(230, 57, 70, 0.65); letter-spacing: -1px; }
+    .n-logo { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ff2a3c 0%, #9e0b18 100%); color: #ffffff; font-family: "Arial Black", Impact, sans-serif; font-weight: 900; font-style: italic; font-size: 21px; padding: 1px 11px 2px 9px; transform: skewX(-18deg); border-radius: 4px; border-left: 3.5px solid #00b4d8; box-shadow: 0 3px 12px rgba(230, 57, 70, 0.65); letter-spacing: -1px; }
+    .n-logo span { transform: skewX(6deg); display: inline-block; }
     #status { font-size: 13px; color: var(--sub); margin-top: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.04); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); }
-    .card { background: var(--card); border-radius: 18px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; border: 1px solid rgba(255, 255, 255, 0.07); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); }
-    .card-title { font-size: 15px; font-weight: 800; margin-bottom: 12px; color: var(--nblue); text-transform: uppercase; font-style: italic; }
-    .btn { width: 100%; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; color: white; transition: all 0.15s ease; text-align: center; }
+    .card { background: var(--card); border-radius: 18px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; border: 1px solid rgba(255, 255, 255, 0.07); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); position: relative; }
+    .card-title { font-size: 15px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.3px; }
+    .btn { width: 100%; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; color: white; transition: all 0.15s ease; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
     .btn:active { transform: scale(0.97); }
     .btn-connect { background: linear-gradient(135deg, #00b4d8 0%, #005f99 100%); margin-bottom: 10px; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.35); }
-    .btn-disconnect { background: linear-gradient(135deg, #e63946 0%, #9e0b18 100%); margin-bottom: 10px; box-shadow: 0 4px 14px rgba(230, 57, 70, 0.35); }
-    .btn-calib { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); font-size: 13px; margin-top: 10px; }
-    .btn-gprotect { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; }
-    .btn-gprotect.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; }
+    .btn-auto { background: linear-gradient(135deg, #38b000 0%, #007200 100%); font-size: 15px; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(56, 176, 0, 0.35); }
+    .btn-save { background: linear-gradient(135deg, #2ec4b6 0%, #1b8a5a 100%); margin-top: 18px; box-shadow: 0 4px 14px rgba(46, 196, 182, 0.35); }
+    .btn-calib { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); font-size: 13px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
+    .btn-gprotect { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; box-shadow: 0 4px 14px rgba(239, 35, 60, 0.35); }
+    .btn-gprotect.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; box-shadow: 0 4px 14px rgba(0, 150, 199, 0.4); }
+    .active-border { outline: 2px solid #ffffff; }
+    .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); width: 100%; }
+    .btn-flash.pressing { background: #ffffff; color: #000000; text-shadow: none; }
     
-    .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; }
+    .locked { opacity: 0.28; filter: grayscale(90%); pointer-events: none !important; }
+    .lock-banner { background: linear-gradient(135deg, rgba(230, 57, 70, 0.22) 0%, rgba(155, 11, 29, 0.25) 100%); border: 1px solid var(--nred); color: #ffccd5; padding: 11px; border-radius: 12px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; }
+    .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; z-index: 10; }
+    .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
+    .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
+    .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
     canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); }
-    .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; text-transform: uppercase; font-style: italic; }
-    
-    .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-    .slot { background-color: #1f242d; border: 2px dashed #343c4a; height: 50px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; cursor: pointer; color: var(--sub); }
-    .slot.saved { border-style: solid; border-color: var(--nblue); color: #fff; }
-    
+    .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .g-box { display: flex; justify-content: space-around; background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 10px; }
+    .g-item { text-align: center; }
+    .g-label { font-size: 11px; color: var(--sub); font-weight: 700; display: block; margin-bottom: 4px; }
+    .g-val { font-size: 18px; font-weight: 900; color: #ffffff; font-style: italic; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .btn-fx { background: linear-gradient(145deg, #2b313d 0%, #1c2028 100%); border: 1px solid rgba(255, 255, 255, 0.09); padding: 13px 8px; border-radius: 11px; font-size: 12px; font-weight: 700; text-align: left; padding-left: 11px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); color: white; }
+    .btn-fx.active { background: linear-gradient(135deg, #00b4d8 0%, #e63946 100%); border: 1px solid #ffffff; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.45); }
     .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 600; }
-    .sub-label span:last-child { color: var(--nblue); }
-    
-    input[type="range"] { -webkit-appearance: none; width: 100%; height: 11px; border-radius: 6px; background: linear-gradient(90deg, #1f242d 0%, #343c4a 100%); outline: none; margin: 8px 0 4px 0; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 25px; height: 25px; border-radius: 50%; background: #ffffff; border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 168, 232, 0.6); }
-    
+    input[type="range"] { -webkit-appearance: none; width: 100%; height: 11px; border-radius: 6px; background: linear-gradient(90deg, #1f242d 0%, #343c4a 100%); border: 1px solid rgba(255,255,255,0.08); outline: none; margin: 8px 0 4px 0; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 25px; height: 25px; border-radius: 50%; background: linear-gradient(135deg, #ffffff 0%, #d8e2dc 100%); border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 168, 232, 0.6); }
     #tonSlider { background: linear-gradient(90deg, #ffd166 0%, #ffffff 50%, #4cc9f0 100%); }
-    .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #7a8594; margin-bottom: 6px; }
-    .select-input { width: 100%; height: 48px; background: #1f242d; color: white; border: 1px solid #343c4a; border-radius: 12px; padding: 0 12px; font-size: 14px; font-weight: bold; outline: none; margin-top: 5px; }
+    #briSlider { background: linear-gradient(90deg, #161920 0%, #00b4d8 50%, #ffffff 100%); }
+    #tmrSlider { background: linear-gradient(90deg, #2b313d 0%, #7209b7 50%, #e63946 100%); }
+    .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #7a8594; margin-bottom: 6px; font-weight: 500; }
+    .timer-badge { background: linear-gradient(135deg, #252a34 0%, #181b22 100%); padding: 4px 10px; border-radius: 8px; font-size: 12px; color: var(--nblue); font-weight: 800; border: 1px solid rgba(0, 168, 232, 0.3); }
+    .timer-badge.running { background: linear-gradient(135deg, rgba(230, 57, 70, 0.35) 0%, rgba(155, 11, 29, 0.45) 100%); color: #ffccd5; border: 1px solid var(--nred); }
+    .hidden { display: none; }
+    .version-footer { position: absolute; bottom: 8px; right: 12px; font-size: 10px; color: #4a5464; font-weight: 600; letter-spacing: 0.5px; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
+    .modal-box { background: linear-gradient(145deg, #1d222b 0%, #11141a 100%); border: 2px solid var(--nred); border-radius: 20px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 10px 30px rgba(230,57,70,0.3); text-align: center; }
+    .modal-title { font-size: 20px; font-weight: 900; color: var(--nred); letter-spacing: 1px; margin-bottom: 14px; text-transform: uppercase; font-style: italic; }
+    .modal-text { font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px; text-align: justify; }
+    .modal-btn { background: linear-gradient(135deg, #e63946 0%, #9e0b18 100%); color: white; padding: 12px; font-weight: 800; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; width: 100%; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
   </style>
 </head>
 <body>
 
+  <div id="legalModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title">⚠️ WICHTIGER DISCLAIMER</div>
+      <div class="modal-text">
+        Dieses DRL-Steuerungsmodul und die hiermit erzeugten Lichteffekte sowie benutzerdefinierten Farben sind <strong>im Bereich der StVZO (Straßenverkehrsordnung) NICHT zugelassen</strong>. Die Nutzung ist ausschließlich für Show-Fahrzeuge, Tuning-Treffen und Motorsport-Zwecke auf abgesperrtem Privatgelände gestattet.<br><br>
+        Es wird <strong>keinerlei Haftung</strong> für Bußgelder, Stilllegungen oder Schäden übernommen, falls dieses System missbräuchlich im öffentlichen Straßenverkehr verwendet wird. Zur rechtlichen Absicherung ist das Modul mit einem integrierten G-Kraft-Sensor ausgestattet, welcher bunte Lichtspielereien bei Bewegung automatisch unterbindet.<br><br>
+        <div style="text-align: center; font-weight: 900; color: var(--nblue); font-size: 15px; margin-top: 10px; font-style: italic;">Viel Spaß!</div>
+      </div>
+      <button class="modal-btn" onclick="document.getElementById('legalModal').style.display='none'">Ich verstehe & akzeptiere</button>
+    </div>
+  </div>
+
   <div class="header">
     <div class="title-row">
-      <h1>i20 DRL</h1>
-      <div class="n-logo"><span>N</span></div>
+      <h1>i20 <span class="n-logo"><span>N</span></span> DRL CONTROL</h1>
     </div>
-    <div id="status">Bereit für Verbindung</div>
+    <div id="status">Nicht verbunden</div>
   </div>
 
-  <button id="connectBtn" class="btn btn-connect" onclick="connectBLE()">Mit Controller verbinden</button>
+  <div class="card">
+    <button class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
+    <button id="btnAuto" class="btn btn-auto active-border" onclick="aktiviereAuto()">☀️ TAGESFAHRLICHT MODUS</button>
+    <button id="btnGprotect" class="btn btn-gprotect" onclick="toggleGforceProtect()">🔒 G-Kraft-Schutz für Show-Modus AUS</button>
+  </div>
 
-  <div style="width: 100%; max-width: 400px;">
+  <div class="tab-row">
+    <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
+    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
+    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
+  </div>
+
+  <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
     
-    <!-- Fahrsicherheit -->
-    <div class="card">
-      <div class="card-title">Fahrsicherheit & Sensorik</div>
-      <button id="safetyBtn" class="btn btn-gprotect" onclick="toggleSafety()">
-        <span>G-Force Schutzfunktion</span>
-        <span id="safetyStatus">DEAKTIVIERT</span>
-      </button>
-      <button class="btn btn-calib" onclick="calibrateSensor()">Sensor Nullen (Kalibrieren)</button>
-    </div>
+    <div id="viewShow">
+      <div id="lockBanner" class="lock-banner">🔒 Show-Farben & Effekte gesperrt: Bitte oben den G-Kraft-Schutz für den Show-Modus einschalten!</div>
+      <div id="showContent" class="locked">
+        <div class="card">
+          <div class="card-title"><span>🏁 Telemetrie / G-Force Werte</span></div>
+          <div class="g-box">
+            <div class="g-item"><span class="g-label">SEITENKRAFT (X-ACHSE)</span><span id="valGX" class="g-val">0.00 G</span></div>
+            <div class="g-item"><span class="g-label">LÄNGSKRAFT (Y-ACHSE)</span><span id="valGY" class="g-val">0.00 G</span></div>
+          </div>
+          <button class="btn btn-calib" onclick="senden('CALIB')">📍 Sensor im Stillstand nullen</button>
+        </div>
 
-    <!-- Lichtsteuerung -->
-    <div class="card">
-      <div class="card-title">Farbe & Standlichtkonfiguration</div>
-      
-      <div class="wheel-wrap">
-        <div class="wheel-preview-box" id="previewBox">Neutralweiß</div>
-        <canvas id="colorWheel" width="220" height="220"></canvas>
+        <div class="card">
+          <div class="card-title"><span>🕹️ Live-Trigger</span></div>
+          <button id="btnFlashHold" class="btn btn-flash">⚡ FLASH HOLD <span style="font-size:11px; font-weight:normal;">(Gedrückt halten)</span></button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>🎨 Freies Farbrad</span></div>
+          <div class="wheel-wrap">
+            <div id="colorPreview" class="wheel-preview-box">LIVE-FARBE</div>
+            <canvas id="colorWheel" width="220" height="220"></canvas>
+          </div>
+          <div class="sub-label"><span>☀️ Show-Helligkeit</span><span id="briText">100%</span></div>
+          <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
+        </div>
+
+        <div id="fxContainerCard" class="card">
+          <div class="card-title"><span>✨ 24 Show-Effekte</span></div>
+          <div class="grid" id="fxGrid"></div>
+        </div>
+
+        <div id="timerContainerCard" class="card">
+          <div class="card-title"><span>⏱️ Auto-Off Show-Timer</span><span id="timerCountdown" class="timer-badge">Aus</span></div>
+          <div class="sub-label"><span>Zeit bis zur Rückkehr auf Weiß</span><span id="tmrText">0 Min (Aus)</span></div>
+          <input type="range" id="tmrSlider" min="0" max="60" value="0" oninput="onTimerSliderChange()" onchange="sendeTimerAufChip()">
+          <div class="slider-hints"><span>Aus</span><span>15 Min</span><span>30 Min</span><span>60 Min</span></div>
+        </div>
       </div>
+    </div>
 
-      <div class="sub-label"><span>Weißton-Abgleich (Standlicht)</span><span id="tonVal">Mitte</span></div>
-      <input type="range" id="tonSlider" min="0" max="255" value="128" oninput="updateTflValues()">
-      <div class="slider-hints"><span>Warmweiß</span><span>Neutral</span><span>Kaltweiß</span></div>
-
-      <div class="sub-label"><span>Helligkeit am Tag (TFL)</span><span id="tagVal">100%</span></div>
-      <input type="range" id="tagSlider" min="0" max="255" value="255" oninput="updateTflValues()">
-
-      <div class="sub-label"><span>Helligkeit bei Nacht (Gedimmt)</span><span id="nachtVal">20%</span></div>
-      <input type="range" id="nachtSlider" min="0" max="255" value="55" oninput="updateTflValues()">
-      
-      <h4 style="margin: 20px 0 8px 0; font-size: 13px; color: var(--sub);">6 Speicherprofile (Halten = Sichern)</h4>
-      <div class="slots-grid">
-        <div class="slot" id="slot0">Slot 1</div>
-        <div class="slot" id="slot1">Slot 2</div>
-        <div class="slot" id="slot2">Slot 3</div>
-        <div class="slot" id="slot3">Slot 4</div>
-        <div class="slot" id="slot4">Slot 5</div>
-        <div class="slot" id="slot5">Slot 6</div>
+    <div id="viewTfl" class="hidden">
+      <div class="card">
+        <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
+        <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
+        <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange()">
+        <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
+        <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit (Tag)</span><span id="tagText">100%</span></div>
+        <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange()">
+        <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht (Nacht)</span><span id="nachtText">20%</span></div>
+        <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange()">
+        <button class="btn" style="background:var(--green); margin-top:18px;" onclick="speichereTfl()">💾 STANDLICHT IM CHIP SPEICHERN</button>
       </div>
     </div>
 
-    <!-- Show-Effekte -->
-    <div class="card">
-      <div class="card-title">Show-Effekte im Stand</div>
-      <select id="effectSelect" class="select-input" onchange="sendEffect()">
-        <option value="0">Kein Effekt (Statisch)</option>
-        <option value="2">Effekt 1: Atmen / Pulsieren</option>
-        <option value="3">Effekt 2: Strobe / Blitzen</option>
-      </select>
+    <div id="viewWel" class="hidden">
+      <div class="card">
+        <div class="card-title"><span>👋 Welcome-Home Animation</span></div>
+        <div class="grid" id="welcomeGrid"></div>
+        <button class="btn" style="background:var(--green); margin-top:18px;" onclick="senden('WELSET:'+welcomeTyp)">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
+      </div>
     </div>
-
   </div>
 
-  <script>
-    const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
-    const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+  <div class="version-footer">Ver. 2.30</div>
 
-    let bleDevice = null;
-    let bleCharacteristic = null;
-    let safetyActive = false;
-    let slots = JSON.parse(localStorage.getItem('i20n_slots_v3')) || Array(6).fill(null);
-    window.currentRGB = {r: 40, g: 60, b: 120, w: 255}; 
-    let isColorWheelActive = false;
+<script>
+  let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
+  let gforceProtectAktiv = false, lastX = null, lastY = null;
+  let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
+  let isSending = false; // FIX VER. 2.30: Physischer Sende-Riegel gegen Überlastung
 
-    // Farbrad vorbereiten
-    const canvas = document.getElementById('colorWheel');
-    const ctx = canvas.getContext('2d');
-    const radius = canvas.width / 2;
+  const effekte = [
+    "🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer",
+    "🏎️ 5. Pace-Car Doppel", "✨ 6. Dreifach-Blitzer", "🚓 7. US-Polizei", "🚨 8. Rundumleuchte",
+    "🌅 9. Sanft Einblenden", "🌇 10. Sanft Ausblenden", "🕯️ 11. Kerzenflackern", "⛈️ 12. Gewitter / Blitz",
+    "🆘 13. SOS-Signal", "🏁 14. i20N Performance", "🌈 15. Regenbogen Sanft", "🎉 16. Farb-Sprung",
+    "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch", "⚡ 19. Highway Lichthupe", "🌋 20. Plasma & Magma",
+    "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Laser"
+  ];
+  const welEffekte = ["🌅 1. Sanft Hochdimmen", "⚡ 2. Doppel-Blitz & Dim", "🚫 8. Aus (Sofort An)"];
+
+  function verarbeiteChipDaten(msg) {
+    if (msg.startsWith("G:")) {
+      let t = msg.substring(2).split(',');
+      document.getElementById('valGX').innerText = parseFloat(t[0]).toFixed(2) + " G";
+      document.getElementById('valGY').innerText = parseFloat(t[1]).toFixed(2) + " G";
+    } else if (msg == "FORCE_AUTO") {
+      gforceProtectAktiv = false; toggleGforceProtect();
+    }
+  }
+
+  function toggleGforceProtect() {
+    gforceProtectAktiv = !gforceProtectAktiv;
+    const btn = document.getElementById('btnGprotect');
+    if (gforceProtectAktiv) {
+      btn.classList.add('active'); btn.innerText = "🛡️ G-Kraft-Schutz AKTIV";
+      document.getElementById('showContent').classList.remove('locked');
+      document.getElementById('lockBanner').classList.add('hidden');
+      senden("G_PROT:1");
+    } else {
+      btn.classList.remove('active'); btn.innerText = "🔒 G-Kraft-Schutz für Show-Modus AUS";
+      document.getElementById('showContent').classList.add('locked');
+      document.getElementById('lockBanner').classList.remove('hidden');
+      senden("G_PROT:0");
+    }
+  }
+
+  async function senden(b) { 
+    if (!bleChar || isSending) return; 
+    isSending = true;
+    try {
+      await bleChar.writeValueWithoutResponse(new TextEncoder().encode(b));
+    } catch(e) {}
+    isSending = false;
+  }
+
+  async function verbinden() {
+    try {
+      bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ name: 'i20N Scheinwerfer' }], optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] });
+      const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+      bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+      document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
+      await bleChar.startNotifications();
+      bleChar.addEventListener('characteristicvaluechanged', (e) => { verarbeiteChipDaten(new TextDecoder().decode(e.target.value)); });
+    } catch (err) { document.getElementById('status').innerText = "❌ Fehler"; }
+  }
+
+  function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); senden("AUTO"); }
+
+  const btnFlash = document.getElementById('btnFlashHold');
+  const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
+  const stopFlash = (e) => { if (e) e.preventDefault(); btnFlash.classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
+  btnFlash.addEventListener('pointerdown', startFlash); btnFlash.addEventListener('pointerup', stopFlash); btnFlash.addEventListener('pointerleave', stopFlash); btnFlash.addEventListener('pointercancel', stopFlash);
+
+  function onTimerSliderChange() { timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
+  function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
+  function stoppeTimerUi() { if (timerUiInterval) clearInterval(timerUiInterval); timerMinuten = 0; document.getElementById('tmrSlider').value = 0; document.getElementById('tmrText').innerText = "0 Min (Aus)"; const badge = document.getElementById('timerCountdown'); badge.innerText = "Aus"; badge.classList.remove('running'); }
+
+  const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d'), radius = canvas.width / 2;
+  function zeichneFarbrad() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
     for (let angle = 0; angle < 360; angle++) {
-      let startAngle = (angle - 1) * Math.PI / 180;
-      let endAngle = (angle + 1) * Math.PI / 180;
-      ctx.beginPath();
-      ctx.moveTo(radius, radius);
-      ctx.arc(radius, radius, radius, startAngle, endAngle);
-      ctx.closePath();
-      ctx.fillStyle = `hsl(${angle}, 100%, 50%)`;
-      ctx.fill();
+      ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, (angle-2)*Math.PI/180, angle*Math.PI/180);
+      let grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
+      grad.addColorStop(0, '#fff'); grad.addColorStop(1, 'hsl('+angle+',100%,50%)');
+      ctx.fillStyle = grad; ctx.fill();
     }
+  }
+  zeichneFarbrad();
 
-    function handleWheelInput(clientX, clientY) {
-      const rect = canvas.getBoundingClientRect();
-      const x = clientX - rect.left - radius;
-      const y = clientY - rect.top - radius;
-      const d = Math.sqrt(x*x + y*y);
-      if (d <= radius) {
-        let angle = Math.atan2(y, x) * 180 / Math.PI + 90;
-        if (angle < 0) angle += 360;
-        isColorWheelActive = true;
-        let rgb = hslToRgb(angle/360, 1, 0.5);
-        window.currentRGB = {r: rgb.r, g: rgb.g, b: rgb.b, w: 0};
-        
-        document.getElementById('previewBox').innerText = "Farbe aktiv";
-        document.getElementById('previewBox').style.background = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
-        sendString(`RGBW:${rgb.r},${rgb.g},${rgb.b},0`);
-      }
+  function handleTouchFarbe(e) {
+    if (!gforceProtectAktiv || isSending) return;
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    let x = touch.clientX - rect.left, y = touch.clientY - rect.top;
+    let dx = x - radius, dy = y - radius, dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > radius) return;
+    let winkel = Math.atan2(dy, dx) * (180 / Math.PI); if (winkel < 0) winkel += 360;
+    let s = Math.min(100, Math.round((dist/radius)*100));
+    let rgb = hslZuRgb(winkel, s, 50);
+    
+    let currentHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+    const p = document.getElementById('colorPreview');
+    if (p) { p.style.backgroundColor = currentHex; p.style.color = (rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114) > 186 ? '#000' : '#fff'; }
+
+    let now = Date.now(); 
+    if (now - lastSend > 75) { lastSend = now; senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0"); }
+  }
+
+  canvas.addEventListener('touchstart', handleTouchFarbe, {passive: false});
+  canvas.addEventListener('touchmove', handleTouchFarbe, {passive: false});
+
+  function hslZuRgb(h, s, l) {
+    h /= 360; s /= 100; l /= 100; let r, g, b;
+    if (s === 0) { r = g = b = l; } else {
+      let q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
     }
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+  }
+  function hue2rgb(p, q, t) { if(t<0) t+=1; if(t>1) t-=1; if(t<1/6) return p+(q-p)*6*t; if(t<1/2) return q; if(t<2/3) return p+(q-p)*(2/3-t)*6; return p; }
 
-    canvas.addEventListener('click', (e) => handleWheelInput(e.clientX, e.clientY));
-    canvas.addEventListener('touchmove', (e) => { if(e.touches.length > 0) handleWheelInput(e.touches[0].clientX, e.touches[0].clientY); });
+  function bTflMix(t) { return { r: t<50 ? 255 : Math.round(255-(110*(t-50)/50)), g: t<50 ? Math.round(180+75*(t/50)) : Math.round(255-20*(t-50)/50), b: t<50 ? Math.round(60+195*(t/50)) : 255, w: 255 }; }
 
-    function hslToRgb(h, s, l) {
-      let r, g, b;
-      let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      let p = 2 * l - q;
-      const hue2rgb = (p, q, t) => {
-        if (t < 0) t += 1; if (t > 1) t -= 1;
-        if (t < 1/6) return p + (q - p) * 6 * t;
-        if (t < 1/2) return q;
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-        return p;
-      };
-      return {r: Math.round(hue2rgb(p, q, h + 1/3) * 255), g: Math.round(hue2rgb(p, q, h) * 255), b: Math.round(hue2rgb(p, q, h - 1/3) * 255)};
-    }
+  function onTflSliderChange() {
+    let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value), nacht = parseInt(document.getElementById('nachtSlider').value);
+    document.getElementById('tonText').innerText = ton+"%"; document.getElementById('tagText').innerText = tag+"%"; document.getElementById('nachtText').innerText = nacht+"%";
+    let mix = bTflMix(ton), f = tag/100;
+    let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW_TFL:" + Math.round(mix.r*f) + "," + Math.round(mix.g*f) + "," + Math.round(mix.b*f) + "," + Math.round(mix.w*f)); }
+  }
 
-    async function connectBLE() {
-      try {
-        document.getElementById('status').innerText = "Suche läuft...";
-        bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ services: [SERVICE_UUID] }] });
-        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
-        const server = await bleDevice.gatt.connect();
-        const service = await server.getPrimaryService(SERVICE_UUID);
-        bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+  function speichereTfl() {
+    let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value), nacht = parseInt(document.getElementById('nachtSlider').value);
+    let mix = bTflMix(ton), tagVal = Math.round((tag/100)*255), nachtVal = Math.round((nacht/100)*255);
+    senden("TFLSET:" + mix.r + "," + mix.g + "," + mix.b + "," + mix.w + "," + tagVal + "," + nachtVal);
+    alert("Konfiguration im Flash-Speicher hinterlegt!");
+  }
 
-        document.getElementById('status').innerText = "Verbunden ✔";
-        document.getElementById('status').style.color = "#2b9348";
-        document.getElementById('connectBtn').innerText = "Verbindung trennen";
-        document.getElementById('connectBtn').className = "btn btn-disconnect";
-        document.getElementById('connectBtn').setAttribute("onclick", "disconnectBLE()");
-        updateSlotUI();
-      } catch (error) {
-        document.getElementById('status').innerText = "Fehler oder abgebrochen";
-        document.getElementById('status').style.color = "#e63946";
-      }
-    }
+  function renderFx() {
+    const g = document.getElementById('fxGrid'); g.innerHTML = '';
+    effekte.forEach((name, i) => {
+      let b = document.createElement('button'); b.className = 'btn btn-fx'; b.innerText = name;
+      b.onclick = () => { activeFx = (i+1); updateUI(); senden("FX:"+(i+1)); }; g.appendChild(b);
+    });
+  }
+  
+  function renderWelcome() {
+    const g = document.getElementById('welcomeGrid'); g.innerHTML = '';
+    welEffekte.forEach((name) => {
+      let b = document.createElement('button'); b.className = 'btn btn-fx'; b.innerText = name;
+      let id = parseInt(name.match(/\d+/));
+      b.onclick = () => { welcomeTyp = id; senden("WELTEST:"+id); }; g.appendChild(b);
+    });
+  }
 
-    function disconnectBLE() { if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect(); }
-    function onDisconnected() {
-      document.getElementById('status').innerText = "Verbindung verloren - Reconnect...";
-      document.getElementById('status').style.color = "#e63946";
-      document.getElementById('connectBtn').innerText = "Mit Controller verbinden";
-      document.getElementById('connectBtn').className = "btn btn-connect";
-      document.getElementById('connectBtn').setAttribute("onclick", "connectBLE()");
-      setTimeout(() => { if(!bleDevice || !bleDevice.gatt.connected) connectBLE(); }, 3000);
-    }
+  function wechselTab(z) {
+    document.getElementById('viewShow').className = z === 'SHOW' ? '' : 'hidden';
+    document.getElementById('viewTfl').className = z === 'TFL' ? '' : 'hidden';
+    document.getElementById('viewWel').className = z === 'WEL' ? '' : 'hidden';
+    document.getElementById('tabShow').className = 'tab-btn' + (z === 'SHOW' ? ' tab-active' : '');
+    document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
+    document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
+  }
+  
+  window.whitespaceTab = function(z) { wechselTab(z); };
 
-    async function sendString(str) {
-      if (bleCharacteristic) {
-        try { await bleCharacteristic.writeValue(new TextEncoder().encode(str)); } catch(e) { console.log(e); }
-      }
-    }
+  function updateUI() {
+    document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : '');
+    const buttons = document.querySelectorAll('#fxGrid .btn-fx');
+    buttons.forEach((b, i) => {
+      if (activeFx === (i+1)) b.classList.add('active');
+      else b.classList.remove('active');
+    });
+  }
 
-    function updateTflValues() {
-      isColorWheelActive = false;
-      let mix = parseInt(document.getElementById('whiteSlider' ? 0 : 'tonSlider').value);
-      let tag = parseInt(document.getElementById('tagSlider').value);
-      let nacht = parseInt(document.getElementById('nachtSlider').value);
-      
-      let r = 0, g = 0, b = 0, w = 255;
-      if (mix < 128) {
-        r = Math.round((127 - mix) * 1.5); g = Math.round((127 - mix) * 0.7);
-        document.getElementById('tonVal').innerText = "Warmweiß";
-        document.getElementById('previewBox').style.background = "#ffd166";
-      } else if (mix > 128) {
-        b = Math.round((mix - 128) * 1.5);
-        document.getElementById('tonVal').innerText = "Kaltweiß";
-        document.getElementById('previewBox').style.background = "#4cc9f0";
-      } else {
-        document.getElementById('tonVal').innerText = "Neutralweiß";
-        document.getElementById('previewBox').style.background = "#ffffff";
-      }
-      document.getElementById('previewBox').innerText = document.getElementById('tonVal').innerText;
-      document.getElementById('tagVal').innerText = Math.round(tag/2.55) + "%";
-      document.getElementById('nachtVal').innerText = Math.round(nacht/2.55) + "%";
+  function onBriSliderChange() { let b = document.getElementById('briSlider').value; document.getElementById('briText').innerText = b+"%"; senden("BRI:"+b); }
 
-      window.currentRGB = {r: r, g: g, b: b, w: w};
-      sendString(`TFLSET:${r},${g},${b},${w},${tag},${nacht}`);
-    }
-
-    function toggleSafety() {
-      safetyActive = !safetyActive;
-      document.getElementById('safetyBtn').classList.toggle('active', safetyActive);
-      document.getElementById('safetyStatus').innerText = safetyActive ? "AKTIVIERT ✔" : "DEAKTIVIERT";
-      sendString(safetyActive ? "G_PROT:1" : "G_PROT:0");
-    }
-
-    function calibrateSensor() { sendString("CALIB"); alert("Sensor erfolgreich kalibriert!"); }
-    function sendEffect() { sendString(`FX:${document.getElementById('effectSelect').value}`); }
-
-    // Profilplatzierung (Speichern & Laden über touch)
-    for(let i=0; i<6; i++) {
-      const el = document.getElementById('slot' + i);
-      let touchTimer;
-      el.addEventListener('touchstart', () => {
-        touchTimer = setTimeout(() => {
-          slots[i] = { rgb: window.currentRGB, isWheel: isColorWheelActive, ton: document.getElementById('tonSlider').value };
-          localStorage.setItem('i20n_slots_v3', JSON.stringify(slots));
-          updateSlotUI();
-          alert(`In Slot ${i+1} gesichert!`);
-        }, 1000);
-      });
-      el.addEventListener('touchend', () => clearTimeout(touchTimer));
-      el.addEventListener('click', () => {
-        if(slots[i]) {
-          window.currentRGB = slots[i].rgb;
-          isColorWheelActive = slots[i].isWheel;
-          document.getElementById('tonSlider').value = slots[i].ton;
-          if(isColorWheelActive) {
-            sendString(`RGBW:${slots[i].rgb.r},${slots[i].rgb.g},${slots[i].rgb.b},0`);
-          } else {
-            updateTflValues();
-          }
-        }
-      });
-    }
-
-    function updateSlotUI() {
-      slots.forEach((slot, i) => {
-        const el = document.getElementById('slot' + i);
-        if(slot) {
-          el.classList.add('saved');
-          el.style.backgroundColor = slot.isWheel ? `rgb(${slot.rgb.r},${slot.rgb.g},${slot.rgb.b})` : "#ffffff";
-          el.style.color = "#000";
-        }
-      });
-    }
-    updateSlotUI();
-  </script>
+  renderFx(); renderWelcome();
+</script>
 </body>
 </html>
