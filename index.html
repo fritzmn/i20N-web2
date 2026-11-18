@@ -35,7 +35,7 @@
     .n-logo span { transform: skewX(6deg); display: inline-block; }
     #status { font-size: 13px; color: var(--sub); margin-top: 8px; font-weight: 600; background: rgba(255, 255, 255, 0.04); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); }
     .card { background: var(--card); border-radius: 18px; padding: 16px; width: 100%; max-width: 400px; margin-top: 12px; border: 1px solid rgba(255, 255, 255, 0.07); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); position: relative; }
-    .card-title { font-size: 15px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.3px; }
+    .card-title { font-size: 15px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.3px; color: var(--nblue); text-transform: uppercase; font-style: italic; }
     .btn { width: 100%; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; color: white; transition: all 0.15s ease; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
     .btn:active { transform: scale(0.97); }
     .btn-connect { background: linear-gradient(135deg, #00b4d8 0%, #005f99 100%); margin-bottom: 10px; box-shadow: 0 4px 14px rgba(0, 180, 216, 0.35); }
@@ -44,21 +44,20 @@
     .btn-gprotect { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); font-size: 13px; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; box-shadow: 0 4px 14px rgba(239, 35, 60, 0.35); }
     .btn-gprotect.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; box-shadow: 0 4px 14px rgba(0, 150, 199, 0.4); }
     
-    .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; z-index: 10; }
-    .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
-    .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
     .wheel-wrap { display: flex; flex-direction: column; align-items: center; margin: 10px 0; position: relative; }
     canvas#colorWheel { border-radius: 50%; cursor: crosshair; touch-action: none; border: 3px solid rgba(255, 255, 255, 0.15); box-shadow: 0 0 22px rgba(0, 168, 232, 0.25); }
-    .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); text-transform: uppercase; font-style: italic; }
     
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
     .slot { background-color: #1f242d; border: 2px dashed #343c4a; height: 50px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; cursor: pointer; color: var(--sub); }
-    .slot.saved { border-style: solid; border-color: var(--nblue); color: #fff; }
+    .slot.saved { border-style: solid; border-color: var(--nblue); color: #fff; box-shadow: 0 2px 8px rgba(0, 168, 232, 0.3); }
     
     .sub-label { font-size: 12px; color: var(--sub); margin: 16px 0 6px 0; display: flex; justify-content: space-between; font-weight: 600; }
+    .sub-label span:last-child { color: var(--nblue); }
+    
     input[type="range"] { -webkit-appearance: none; width: 100%; height: 11px; border-radius: 6px; background: linear-gradient(90deg, #1f242d 0%, #343c4a 100%); border: 1px solid rgba(255,255,255,0.08); outline: none; margin: 8px 0 4px 0; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 25px; height: 25px; border-radius: 50%; background: linear-gradient(135deg, #ffffff 0%, #d8e2dc 100%); border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 168, 232, 0.6); }
+    
     #tonSlider { background: linear-gradient(90deg, #ffd166 0%, #ffffff 50%, #4cc9f0 100%); }
     #briSlider { background: linear-gradient(90deg, #161920 0%, #00b4d8 50%, #ffffff 100%); }
     #dimSlider { background: linear-gradient(90deg, #2b313d 0%, #7209b7 50%, #e63946 100%); }
@@ -79,10 +78,9 @@
 
   <button id="connectBtn" class="btn btn-connect" onclick="connectBLE()">Mit Controller verbinden</button>
 
-  <!-- Hauptsteuerungspanel -->
   <div style="width: 100%; max-width: 400px;">
     
-    <!-- Sicherheit & Kalibrierung -->
+    <!-- Fahrsicherheit & Sensorik -->
     <div class="card">
       <div class="card-title">Fahrsicherheit & Sensorik</div>
       <button id="safetyBtn" class="btn btn-gprotect" onclick="toggleSafety()">
@@ -92,7 +90,7 @@
       <button class="btn btn-calib" onclick="calibrateSensor()">Sensor Nullen (Kalibrieren)</button>
     </div>
 
-    <!-- Lichtsteuerung & Profile -->
+    <!-- Lichtsteuerung & Farbrad -->
     <div class="card">
       <div class="card-title">Farbe & Standlichtkonfiguration</div>
       
@@ -111,7 +109,7 @@
       <div class="sub-label"><span>Abblendlicht Dimmfaktor</span><span id="dimVal">50%</span></div>
       <input type="range" id="dimSlider" min="0" max="100" value="50" oninput="updateLight(false)">
       
-      <h4 style="margin: 20px 0 8px 0; font-size: 13px; color: var(--sub);">Speicherprofile (Klick = Laden / Halten = Sichern)</h4>
+      <h4 style="margin: 20px 0 8px 0; font-size: 13px; color: var(--sub);">6 Speicherprofile (Klick = Laden / Halten = Sichern)</h4>
       <div class="slots-grid">
         <div class="slot" id="slot0">Slot 1</div>
         <div class="slot" id="slot1">Slot 2</div>
@@ -122,7 +120,7 @@
       </div>
     </div>
 
-    <!-- Effekte -->
+    <!-- Show Effekte -->
     <div class="card">
       <div class="card-title">Show-Effekte im Stand</div>
       <select id="effectSelect" class="select-input" onchange="sendEffect()">
@@ -146,7 +144,7 @@
     window.currentRGB = {r: 0, g: 0, b: 0}; 
     let isColorWheelActive = false;
 
-    // Farbrad initialisieren
+    // Farbrad Rendern
     const canvas = document.getElementById('colorWheel');
     const ctx = canvas.getContext('2d');
     const radius = canvas.width / 2;
@@ -259,13 +257,13 @@
           gOut = Math.round((127 - sliderW) * 0.9);
           bOut = 0;
           document.getElementById('tonVal').innerText = "Warmweiß";
-          document.getElementById('previewBox').style.background = "#ffeaae";
+          document.getElementById('previewBox').style.background = "#ffd166";
           document.getElementById('previewBox').innerText = "Warmweiß";
         } else if (sliderW > 128) {
           rOut = 0; gOut = 0;
           bOut = Math.round((sliderW - 128) * 1.8);
           document.getElementById('tonVal').innerText = "Kaltweiß";
-          document.getElementById('previewBox').style.background = "#cae9ff";
+          document.getElementById('previewBox').style.background = "#4cc9f0";
           document.getElementById('previewBox').innerText = "Kaltweiß";
         } else {
           rOut = 0; gOut = 0; bOut = 0;
@@ -303,15 +301,7 @@
       alert("Sensor im ESP32 erfolgreich kalibriert!");
     }
 
-    function sendEffect() {
-      let effect = parseInt(document.getElementById('effectSelect').value);
-      sendBLEData([4, effect]); 
-      if(effect > 0) {
-        isColorWheelActive = true;
-      }
-    }
-
-    // Touch-Schnittstelle für Speicherprofile
+    // Touch-Schnittstelle für Speicherprofile (1 Sekunde halten zum Sichern)
     for(let i=0; i<6; i++) {
       const el = document.getElementById('slot' + i);
       let touchTimer;
@@ -349,6 +339,7 @@
           if(slot.isWheel) {
             el.style.backgroundColor = `rgb(${slot.rgb.r}, ${slot.rgb.g}, ${slot.rgb.b})`;
             el.style.color = (slot.rgb.r + slot.rgb.g + slot.rgb.b) > 400 ? "#000" : "#fff";
+            el.innerText = "Slot " + (i+1);
           } else {
             el.style.backgroundColor = "#ffffff";
             el.style.color = "#000000";
@@ -357,6 +348,7 @@
         }
       });
     }
+    updateSlotUI();
   </script>
 </body>
 </html>
