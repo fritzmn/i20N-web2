@@ -97,8 +97,8 @@
 
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
-    <button id="tabTfl" class="tab-btn" onclick="whitespaceTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
+    <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
+    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
@@ -166,11 +166,12 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.05</div>
+  <div class="version-footer">Ver. 1.06</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
   let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
+  const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d');
 
   const effekte = [
     "🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer",
@@ -244,7 +245,6 @@
     const badge = document.getElementById('timerCountdown'); if(badge) { badge.innerText = "Aus"; badge.classList.remove('running'); }
   }
 
-  const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d');
   function zeichneFarbrad() {
     const r = canvas.width / 2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -260,16 +260,19 @@
     }
   }
 
-  // FIX VER. 1.05: Reaktivierung des unfehlbaren ersten Finger-Index-Touch [0] für die Canvas-Matrix aus Ver. 2.00
   function handleTouchFarbe(e) {
-    e.preventDefault();
-    if (!e.touches || e.touches.length === 0) return;
+    if (e.preventDefault) e.preventDefault();
+    let currentTouch = null;
+    if (e.touches && e.touches.length > 0) {
+      currentTouch = e.touches[0];
+    } else if (e.clientX !== undefined) {
+      currentTouch = e;
+    }
+    if (!currentTouch) return;
     
     const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0]; // Zwinge den Browser, den ersten aktiven Touchpoint auszulesen
-    
-    let x = touch.clientX - rect.left;
-    let y = touch.clientY - rect.top;
+    let x = currentTouch.clientX - rect.left;
+    let y = currentTouch.clientY - rect.top;
     
     const center = rect.width / 2;
     let dx = x - center;
@@ -344,9 +347,17 @@
   }
   function onBriSliderChange() { let b = document.getElementById('briSlider').value; document.getElementById('briText').innerText = b+"%"; senden("BRI:"+b); }
 
+  // --- HIER SITZT JETZT DIE INITIALISIERUNG AM AUSFALLSICHEREN ENDE ---
   zeichneFarbrad();
+  
   canvas.addEventListener('touchstart', handleTouchFarbe, {passive: false});
   canvas.addEventListener('touchmove', handleTouchFarbe, {passive: false});
+  
+  // Computer-Maus-Klicks erlauben
+  let mouseActive = false;
+  canvas.addEventListener('mousedown', (e) => { mouseActive = true; handleTouchFarbe(e); });
+  canvas.addEventListener('mousemove', (e) => { if (mouseActive) handleTouchFarbe(e); });
+  window.addEventListener('mouseup', () => { mouseActive = false; });
   
   const fBtn = document.getElementById('btnFlashHold');
   if(fBtn) {
