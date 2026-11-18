@@ -2,135 +2,161 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>i20N DRL Controller</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>i20N DRL v1.3 Mobile</title>
     <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-color: #1a1f2c;
+            --accent-color: #00a8ff;
+            --danger-color: #e84118;
+            --text-color: #ffffff;
+        }
         body {
-            background-color: #121212;
-            color: #ffffff;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 15px;
             margin: 0;
+            -webkit-user-select: none;
+            user-select: none;
         }
-        h1 { font-size: 24px; color: #00a8ff; margin-bottom: 5px; }
-        h2 { font-size: 14px; color: #888; margin-top: 0; margin-bottom: 20px; }
+        h1 { font-size: 22px; color: var(--accent-color); margin: 10px 0 2px 0; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .version-badge { background-color: #242b3d; color: var(--accent-color); padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-bottom: 20px; font-weight: bold; }
         .btn {
-            background-color: #00a8ff;
+            background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
+            height: 54px;
+            border-radius: 27px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            margin: 10px 0;
+            margin: 8px 0;
             width: 100%;
-            max-width: 300px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            text-align: center;
+            max-width: 340px;
+            box-shadow: 0 4px 12px rgba(0, 168, 255, 0.2);
+            transition: all 0.2s ease;
         }
-        .btn-disconnect { background-color: #e84118; }
-        .btn-secondary { background-color: #353b48; }
+        .btn:active { transform: scale(0.97); opacity: 0.9; }
+        .btn-disconnect { background-color: var(--danger-color); box-shadow: 0 4px 12px rgba(232, 65, 24, 0.2); }
+        .btn-secondary { background-color: #2c354a; box-shadow: none; }
         .card {
-            background-color: #1e272e;
-            border-radius: 15px;
+            background-color: var(--card-color);
+            border-radius: 20px;
             padding: 20px;
             margin: 10px 0;
             width: 100%;
-            max-width: 300px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            max-width: 340px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
             box-sizing: border-box;
         }
-        .slider-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
+        h3 { margin-top: 0; font-size: 16px; border-bottom: 1px solid #2c354a; padding-bottom: 8px; color: #a0a8ba; }
+        .slider-container { margin: 18px 0; }
+        .slider-label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; font-weight: 500; }
+        .slider-label span:last-child { color: var(--accent-color); font-weight: bold; }
         input[type=range] {
+            -webkit-appearance: none;
             width: 100%;
-            margin-bottom: 15px;
+            height: 8px;
+            border-radius: 4px;
+            background: #2c354a;
+            outline: none;
         }
-        .color-picker-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            margin: 20px auto;
-        }
-        #colorWheel {
-            width: 100%;
-            height: 100%;
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
-            background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
-            cursor: crosshair;
-        }
-        .slots-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .slot {
-            background-color: #2f3640;
-            border: 2px dashed #718093;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 12px;
+            background: var(--text-color);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
             cursor: pointer;
         }
-        .disabled { opacity: 0.3; pointer-events: none; }
-        .status { font-size: 14px; color: #4cd137; margin-bottom: 10px; }
+        .color-picker-container { position: relative; width: 220px; height: 220px; margin: 15px auto; }
+        #colorWheel { width: 100%; height: 100%; border-radius: 50%; cursor: pointer; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px; }
+        .slot {
+            background-color: #242b3d;
+            border: 2px dashed #424f6e;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #8a96b0;
+            cursor: pointer;
+        }
+        .select-input {
+            width: 100%;
+            height: 48px;
+            background-color: #242b3d;
+            color: white;
+            border: 1px solid #424f6e;
+            border-radius: 12px;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+        }
+        .status { font-size: 14px; color: var(--danger-color); margin-bottom: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
 
-    <h1>i20N DRL Controller</h1>
-    <h2>Custom Hardware Control</h2>
+    <h1>i20N DRL Control</h1>
+    <div class="version-badge">Mobile Interface v1.3</div>
 
     <button id="connectBtn" class="btn" onclick="connectBLE()">Mit Controller verbinden</button>
-    <div id="statusText" class="status" style="color: #e84118;">Nicht verbunden</div>
+    <div id="statusText" class="status">Nicht verbunden</div>
 
-    <div id="mainControls" class="disabled">
+    <div id="mainControls" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         
+        <!-- G-Sensor Sektion -->
         <div class="card">
             <h3>Sicherheit & Sensoren</h3>
             <button id="safetyBtn" class="btn btn-secondary" onclick="toggleSafety()">Sensor aktivieren</button>
-            <button class="btn btn-secondary" style="margin-top: 5px;" onclick="calibrateSensor()">Sensor Nullen (Kalibrieren)</button>
+            <button class="btn btn-secondary" style="margin-top: 8px;" onclick="calibrateSensor()">Sensor Nullen</button>
         </div>
 
-        <div id="interactiveControls" class="card disabled">
-            <h3>Farbe & Effekte</h3>
+        <!-- Farb- & Schiebereglersektion -->
+        <div id="interactiveControls" class="card">
+            <h3>Farbe & Profile</h3>
             <div class="color-picker-container">
-                <canvas id="colorWheel" width="200" height="200"></canvas>
+                <canvas id="colorWheel" width="220" height="220"></canvas>
             </div>
             
-            <div class="slider-label"><span>Weißton (Warm ➔ Kalt)</span><span id="wVal">Mitte</span></div>
-            <input type="range" id="whiteSlider" min="0" max="255" value="128" oninput="updateLight()">
+            <div class="slider-container">
+                <div class="slider-label"><span>Weißton (Warm ➔ Kalt)</span><span id="wVal">Mitte</span></div>
+                <input type="range" id="whiteSlider" min="0" max="255" value="128" oninput="updateLight()">
+            </div>
 
-            <div class="slider-label"><span>Helligkeit Standlicht</span><span id="bVal">100%</span></div>
-            <input type="range" id="brightSlider" min="0" max="255" value="255" oninput="updateLight()">
+            <div class="slider-container">
+                <div class="slider-label"><span>Helligkeit Standlicht</span><span id="bVal">100%</span></div>
+                <input type="range" id="brightSlider" min="0" max="255" value="255" oninput="updateLight()">
+            </div>
 
-            <div class="slider-label"><span>Dimm-Faktor (Abblendlicht an)</span><span id="dVal">50%</span></div>
-            <input type="range" id="dimSlider" min="0" max="100" value="50" oninput="updateLight()">
+            <div class="slider-container">
+                <div class="slider-label"><span>Dimm-Faktor (Abblendlicht)</span><span id="dVal">50%</span></div>
+                <input type="range" id="dimSlider" min="0" max="100" value="50" oninput="updateLight()">
+            </div>
             
-            <h4>Presets (Klick = Laden / Rechtsklick = Speichern)</h4>
+            <h4 style="margin: 20px 0 10px 0; font-size: 14px; color: #a0a8ba;">6 Speicherplätze (Halten = Sichern)</h4>
             <div class="slots-grid">
-                <div class="slot" id="slot0" onclick="loadSlot(0)" oncontextmenu="saveSlot(0); return false;">Slot 1</div>
-                <div class="slot" id="slot1" onclick="loadSlot(1)" oncontextmenu="saveSlot(1); return false;">Slot 2</div>
-                <div class="slot" id="slot2" onclick="loadSlot(2)" oncontextmenu="saveSlot(2); return false;">Slot 3</div>
-                <div class="slot" id="slot3" onclick="testColor(255,0,0)">Rein Rot</div>
-                <div class="slot" id="slot4" onclick="testColor(0,255,0)">Rein Grün</div>
-                <div class="slot" id="slot5" onclick="testColor(0,0,255)">Rein Blau</div>
+                <div class="slot" id="slot0">Slot 1</div>
+                <div class="slot" id="slot1">Slot 2</div>
+                <div class="slot" id="slot2">Slot 3</div>
+                <div class="slot" id="slot3">Slot 4</div>
+                <div class="slot" id="slot4">Slot 5</div>
+                <div class="slot" id="slot5">Slot 6</div>
             </div>
 
-            <h4>Lichteffekte (Im Stand)</h4>
-            <select id="effectSelect" class="btn btn-secondary" style="width:100%; max-width:100%;" onchange="sendEffect()">
+            <h4 style="margin: 24px 0 10px 0; font-size: 14px; color: #a0a8ba;">Lichteffekte im Stand</h4>
+            <select id="effectSelect" class="select-input" onchange="sendEffect()">
                 <option value="0">Kein Effekt (Statisch)</option>
                 <option value="1">Effekt 1: Atmen / Pulsieren</option>
                 <option value="2">Effekt 2: Strobe / Blitzen</option>
@@ -146,13 +172,14 @@
         let bleDevice = null;
         let bleCharacteristic = null;
         let safetyActive = false;
-        let slots = JSON.parse(localStorage.getItem('drl_slots')) || [null, null, null, null, null, null];
+        let slots = JSON.parse(localStorage.getItem('drl_slots_v13')) || Array(6).fill(null);
         window.currentRGB = {r: 0, g: 0, b: 0}; 
         let isColorWheelActive = false;
 
         const canvas = document.getElementById('colorWheel');
         const ctx = canvas.getContext('2d');
         const radius = canvas.width / 2;
+        
         for (let angle = 0; angle < 360; angle++) {
             let startAngle = (angle - 1) * Math.PI / 180;
             let endAngle = (angle + 1) * Math.PI / 180;
@@ -164,18 +191,24 @@
             ctx.fill();
         }
 
-        canvas.addEventListener('click', function(e) {
+        function handlePicker(clientX, clientY) {
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left - radius;
-            const y = e.clientY - rect.top - radius;
+            const x = clientX - rect.left - radius;
+            const y = clientY - rect.top - radius;
             const d = Math.sqrt(x*x + y*y);
             if (d <= radius) {
                 let angle = Math.atan2(y, x) * 180 / Math.PI + 90;
                 if (angle < 0) angle += 360;
-                
                 isColorWheelActive = true;
                 window.currentRGB = hslToRgb(angle/360, 1, 0.5);
                 updateLight();
+            }
+        }
+
+        canvas.addEventListener('click', (e) => handlePicker(e.clientX, e.clientY));
+        canvas.addEventListener('touchmove', (e) => {
+            if(e.touches.length > 0) {
+                handlePicker(e.touches[0].clientX, e.touches[0].clientY);
             }
         });
 
@@ -194,19 +227,12 @@
             return {r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255)};
         }
 
-        function testColor(r,g,b) {
-            isColorWheelActive = true;
-            window.currentRGB = {r: r, g: g, b: b};
-            updateLight();
-        }
-
         async function connectBLE() {
             try {
-                document.getElementById('statusText').innerText = "Suche läuft...";
+                document.getElementById('statusText').innerText = "Suche...";
                 bleDevice = await navigator.bluetooth.requestDevice({
                     filters: [{ services: [SERVICE_UUID] }] 
                 });
-
                 bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
                 const server = await bleDevice.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
@@ -217,10 +243,9 @@
                 document.getElementById('connectBtn').innerText = "Trennen";
                 document.getElementById('connectBtn').className = "btn btn-disconnect";
                 document.getElementById('connectBtn').setAttribute("onclick", "disconnectBLE()");
-                document.getElementById('mainControls').classList.remove('disabled');
                 updateSlotUI();
             } catch (error) {
-                document.getElementById('statusText').innerText = "Fehler oder Suche abgebrochen";
+                document.getElementById('statusText').innerText = "Verbindung fehlgeschlagen";
                 document.getElementById('statusText').style.color = "#e84118";
             }
         }
@@ -230,12 +255,11 @@
         }
 
         function onDisconnected() {
-            document.getElementById('statusText').innerText = "Verbindung verloren - Reconnect...";
+            document.getElementById('statusText').innerText = "Getrennt - Reconnect...";
             document.getElementById('statusText').style.color = "#e84118";
             document.getElementById('connectBtn').innerText = "Mit Controller verbinden";
             document.getElementById('connectBtn').className = "btn";
             document.getElementById('connectBtn').setAttribute("onclick", "connectBLE()");
-            document.getElementById('mainControls').classList.add('disabled');
             setTimeout(() => { if(!bleDevice || !bleDevice.gatt.connected) connectBLE(); }, 3000);
         }
 
@@ -263,8 +287,7 @@
                     bOut = 0;
                     document.getElementById('wVal').innerText = "Warmweiß";
                 } else if (sliderW > 128) {
-                    rOut = 0;
-                    gOut = 0;
+                    rOut = 0; gOut = 0;
                     bOut = Math.round((sliderW - 128) * 1.8);
                     document.getElementById('wVal').innerText = "Kaltweiß";
                 } else {
@@ -285,24 +308,20 @@
         function toggleSafety() {
             safetyActive = !safetyActive;
             const btn = document.getElementById('safetyBtn');
-            const interact = document.getElementById('interactiveControls');
-            
             if(safetyActive) {
                 btn.innerText = "Sensor aktiv ✔";
                 btn.style.backgroundColor = "#4cd137";
-                interact.classList.remove('disabled');
                 sendBLEData([2, 1]); 
             } else {
                 btn.innerText = "Sensor aktivieren";
-                btn.style.backgroundColor = "#353b48";
-                interact.classList.add('disabled');
+                btn.style.backgroundColor = "#2c354a";
                 sendBLEData([2, 0]); 
             }
         }
 
         function calibrateSensor() {
             sendBLEData([3]); 
-            alert("Sensor kalibriert!");
+            alert("Sensor erfolgreich kalibriert!");
         }
 
         function sendEffect() {
@@ -310,35 +329,50 @@
             sendBLEData([4, effect]); 
         }
 
-        function saveSlot(index) {
-            slots[index] = {
-                rgb: window.currentRGB,
-                w: document.getElementById('whiteSlider').value
-            };
-            localStorage.setItem('drl_slots', JSON.stringify(slots));
-            updateSlotUI();
-            alert("Farbe im Slot " + (index+1) + " gespeichert!");
-        }
+        // Touch-Optimiertes Speichern und Laden der Slots
+        for(let i=0; i<6; i++) {
+            const el = document.getElementById('slot' + i);
+            let timer;
+            
+            el.addEventListener('touchstart', (e) => {
+                timer = setTimeout(() => {
+                    slots[i] = { rgb: window.currentRGB, isWheel: isColorWheelActive, w: document.getElementById('whiteSlider').value };
+                    localStorage.setItem('drl_slots_v13', JSON.stringify(slots));
+                    updateSlotUI();
+                    alert(`Farbe erfolgreich auf Platz ${i+1} gesichert!`);
+                }, 1000); // 1 Sekunde gedrückt halten zum Speichern
+            });
 
-        function loadSlot(index) {
-            if(slots[index]) {
-                isColorWheelActive = true;
-                window.currentRGB = slots[index].rgb;
-                document.getElementById('whiteSlider').value = slots[index].w;
-                updateLight();
-            }
+            el.addEventListener('touchend', () => clearTimeout(timer));
+            el.addEventListener('click', () => {
+                if(slots[i]) {
+                    window.currentRGB = slots[i].rgb;
+                    isColorWheelActive = slots[i].isWheel;
+                    document.getElementById('whiteSlider').value = slots[i].w;
+                    updateLight();
+                }
+            });
         }
 
         function updateSlotUI() {
             slots.forEach((slot, i) => {
                 const el = document.getElementById('slot' + i);
-                if(slot && i < 3) { 
+                if(slot) {
                     el.style.borderStyle = "solid";
-                    el.style.borderColor = "#00a8ff";
-                    el.style.backgroundColor = `rgb(${slot.rgb.r}, ${slot.rgb.g}, ${slot.rgb.b})`;
+                    el.style.borderColor = "var(--accent-color)";
+                    if(slot.isWheel) {
+                        el.style.backgroundColor = `rgb(${slot.rgb.r}, ${slot.rgb.g}, ${slot.rgb.b})`;
+                        el.innerText = `Profil ${i+1}`;
+                        el.style.color = "#fff";
+                    } else {
+                        el.style.backgroundColor = "#fff";
+                        el.innerText = "Weiß-Profil";
+                        el.style.color = "#000";
+                    }
                 }
             });
         }
+        updateSlotUI();
     </script>
 </body>
 </html>
