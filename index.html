@@ -30,6 +30,7 @@
             width: 100%;
             max-width: 300px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-align: center;
         }
         .btn-disconnect { background-color: #e84118; }
         .btn-secondary { background-color: #353b48; }
@@ -102,7 +103,6 @@
         <!-- G-Kraft Sicherheit -->
         <div class="card">
             <h3>Sicherheit & Sensoren</h3>
-            <div class="slider-label"><span>G-Sensor Schutzfunktion</span></div>
             <button id="safetyBtn" class="btn btn-secondary" onclick="toggleSafety()">Sensor aktivieren</button>
             <button class="btn btn-secondary" style="margin-top: 5px;" onclick="calibrateSensor()">Sensor Nullen (Kalibrieren)</button>
         </div>
@@ -114,7 +114,7 @@
                 <canvas id="colorWheel" width="200" height="200"></canvas>
             </div>
             
-            <div class="slider-label"><span>Weißton (Warm / Kalt)</span><span id="wVal">128</span></div>
+            <div class="slider-label"><span>Weißton (Warm ➔ Kalt)</span><span id="wVal">Mitte</span></div>
             <input type="range" id="whiteSlider" min="0" max="255" value="128" oninput="updateLight()">
 
             <div class="slider-label"><span>Helligkeit Standlicht</span><span id="bVal">100%</span></div>
@@ -123,7 +123,7 @@
             <div class="slider-label"><span>Dimm-Faktor (Abblendlicht an)</span><span id="dVal">50%</span></div>
             <input type="range" id="dimSlider" min="0" max="100" value="50" oninput="updateLight()">
             
-            <h4>Presets / Speicherplätze (Langdruck zum Sichern)</h4>
+            <h4>Presets (Klick = Laden / Rechtsklick = Speichern)</h4>
             <div class="slots-grid">
                 <div class="slot" id="slot0" onclick="loadSlot(0)" oncontextmenu="saveSlot(0); return false;">Slot 1</div>
                 <div class="slot" id="slot1" onclick="loadSlot(1)" oncontextmenu="saveSlot(1); return false;">Slot 2</div>
@@ -151,6 +151,7 @@
         let bleCharacteristic = null;
         let safetyActive = false;
         let slots = JSON.parse(localStorage.getItem('drl_slots')) || [null, null, null, null, null, null];
+        window.currentRGB = {r: 0, g: 0, b: 0}; 
 
         // Farbrad zeichnen
         const canvas = document.getElementById('colorWheel');
@@ -175,18 +176,12 @@
             if (d <= radius) {
                 let angle = Math.atan2(y, x) * 180 / Math.PI + 90;
                 if (angle < 0) angle += 360;
-                // HSL zu RGB Konvertierung vereinfacht
-                ctx.fillStyle = `hsl(${angle}, 100%, 50%)`;
-                document.getElementById('interactiveControls').style.borderColor = `hsl(${angle}, 100%, 50%)`;
                 
-                // Ungefähre RGB Werte berechnen
                 let rgb = hslToRgb(angle/360, 1, 0.5);
                 window.currentRGB = rgb;
                 updateLight();
             }
         });
-
-        window.currentRGB = {r: 255, g: 255, b: 255};
 
         function hslToRgb(h, s, l) {
             let r, g, b;
@@ -236,14 +231,12 @@
         }
 
         function onDisconnected() {
-            document.getElementById('statusText').innerText = "Verbindung verloren - Suche läuft...";
+            document.getElementById('statusText').innerText = "Verbindung verloren - Reconnect...";
             document.getElementById('statusText').style.color = "#e84118";
             document.getElementById('connectBtn').innerText = "Mit Controller verbinden";
             document.getElementById('connectBtn').className = "btn";
             document.getElementById('connectBtn').setAttribute("onclick", "connectBLE()");
-            document.getElementById('mainControls').className = "disabled";
-            
-            // Auto-Reconnect Versuch alle 3 Sekunden
+            document.getElementById('mainControls').classList.add('disabled');
             setTimeout(() => { if(!bleDevice || !bleDevice.gatt.connected) connectBLE(); }, 3000);
         }
 
@@ -254,16 +247,42 @@
         }
 
         function updateLight() {
-            let w = document.getElementById('whiteSlider').value;
-            let b = document.getElementById('brightSlider').value;
-            let d = document.getElementById('dimSlider').value;
+            let sliderW = parseInt(document.getElementById('whiteSlider').value);
+            let b = parseInt(document.getElementById('brightSlider').value);
+            let d = parseInt(document.getElementById('dimSlider').value);
             
-            document.getElementById('wVal').innerText = w;
+            let rOut = window.currentRGB.r;
+            let gOut = window.currentRGB.g;
+            let bOut = window.currentRGB.b;
+            let wOut = 255; 
+
+            // Wenn kein Farbrad gewählt wurde, mischen wir Warm/Kaltweiß über RGB+W
+            if(rOut === 0 && gOut === 0 && bOut === 0) {
+                if (sliderW < 128) {
+                    // Warmweiß: Volles Weiß + Rot/Gelb-Beimischung
+                    rOut = Math.round((127 - sliderW) * 1.5);
+                    gOut = Math.round((127 - sliderW) * 0.8);
+                    bOut = 0;
+                    document.getElementById('wVal').innerText = "Warmweiß";
+                } else if (sliderW > 128) {
+                    // Kaltweiß: Volles Weiß + Blau-Beimischung
+                    rOut = 0;
+                    gOut = 0;
+                    bOut = Math.round((sliderW - 128) * 1.5);
+                    document.getElementById('wVal').innerText = "Kaltweiß";
+                } else {
+                    document.getElementById('wVal').innerText = "Neutralweiß";
+                }
+            } else {
+                document.getElementById('wVal').innerText = "Farbe aktiv";
+                wOut = sliderW; // Im Farbmodus dient der Schieberegler als Intensität der weißen LED
+            }
+            
             document.getElementById('bVal').innerText = Math.round(b/2.55) + "%";
             document.getElementById('dVal').innerText = d + "%";
 
-            // Befehl 1: Lichtdaten [1, R, G, B, W, Helligkeit, Dimmfaktor]
-            sendBLEData([1, window.currentRGB.r, window.currentRGB.g, window.currentRGB.b, w, b, d]);
+            // Befehlsschlüssel 1 mit allen 6 Datenbytes explizit indiziert senden
+            sendBLEData([1, rOut, gOut, bOut, wOut, b, d]);
         }
 
         function toggleSafety() {
@@ -274,27 +293,26 @@
             if(safetyActive) {
                 btn.innerText = "Sensor aktiv ✔";
                 btn.style.backgroundColor = "#4cd137";
-                interact.classList.remove('disabled'); // Schaltet Farbrad frei
-                sendBLEData([2, 1]); // Befehl 2: Sensor Ein
+                interact.classList.remove('disabled');
+                sendBLEData([2, 1]); 
             } else {
                 btn.innerText = "Sensor aktivieren";
                 btn.style.backgroundColor = "#353b48";
                 interact.classList.add('disabled');
-                sendBLEData([2, 0]); // Befehl 2: Sensor Aus
+                sendBLEData([2, 0]); 
             }
         }
 
         function calibrateSensor() {
-            sendBLEData([3, 0]); // Befehl 3: Kalibrieren
+            sendBLEData([3, 0]); 
             alert("Sensor kalibriert!");
         }
 
         function sendEffect() {
-            let effect = document.getElementById('effectSelect').value;
-            sendBLEData([4, effect]); // Befehl 4: Effekt senden
+            let effect = parseInt(document.getElementById('effectSelect').value);
+            sendBLEData([4, effect]); 
         }
 
-        // Preset Speicherplatz Logik
         function saveSlot(index) {
             slots[index] = {
                 rgb: window.currentRGB,
@@ -317,7 +335,8 @@
             slots.forEach((slot, i) => {
                 const el = document.getElementById('slot' + i);
                 if(slot) {
-                    el.classList.add('saved');
+                    el.style.borderStyle = "solid";
+                    el.style.borderColor = "#00a8ff";
                     el.style.backgroundColor = `rgb(${slot.rgb.r}, ${slot.rgb.g}, ${slot.rgb.b})`;
                 }
             });
