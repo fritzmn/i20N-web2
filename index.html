@@ -47,8 +47,8 @@
     .wheel-preview-box { width: 100%; max-width: 180px; height: 35px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #00a8e8; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: background-color 0.15s ease; }
     
     .slot-row { display: flex; justify-content: space-between; margin-top: 14px; padding: 0 4px; gap: 8px; width: 100%; }
-    .slot-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); cursor: pointer; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); transition: 0.1s ease; }
-    .slot-btn:active { transform: scale(0.9); border-color: #fff; }
+    .slot-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); cursor: pointer; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); transition: 0.1s ease; position: relative; }
+    .slot-btn:active, .slot-btn.selected { transform: scale(0.9); border-color: #fff; box-shadow: 0 0 12px #fff; }
 
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .btn-fx { background: linear-gradient(145deg, #2b313d 0%, #1c2028 100%); border: 1px solid rgba(255, 255, 255, 0.09); padding: 13px 8px; border-radius: 11px; font-size: 12px; font-weight: 700; text-align: left; padding-left: 11px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); color: white; }
@@ -98,7 +98,7 @@
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
     <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
+    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
@@ -120,13 +120,14 @@
           <input type="range" id="briSlider" min="0" max="100" value="100" oninput="onBriSliderChange()">
           
           <div class="slot-row">
-            <button class="slot-btn" style="background:#e63946;" onclick="wähleSlotFarbe(255,0,0,'#e63946')"></button>
-            <button class="slot-btn" style="background:#38b000;" onclick="wähleSlotFarbe(0,255,0,'#38b000')"></button>
-            <button class="slot-btn" style="background:#00a8e8;" onclick="wähleSlotFarbe(0,0,255,'#00a8e8')"></button>
-            <button class="slot-btn" style="background:#00f5d4;" onclick="wähleSlotFarbe(0,255,220,'#00f5d4')"></button>
-            <button class="slot-btn" style="background:#ff007f;" onclick="wähleSlotFarbe(255,0,127,'#ff007f')"></button>
-            <button class="slot-btn" style="background:#ffb703;" onclick="wähleSlotFarbe(255,183,3,'#ffb703')"></button>
+            <button id="slot0" class="slot-btn" style="background:#e63946;" onclick="klickSlot(0,255,0,0,'#e63946')"></button>
+            <button id="slot1" class="slot-btn" style="background:#38b000;" onclick="klickSlot(1,0,255,0,'#38b000')"></button>
+            <button id="slot2" class="slot-btn" style="background:#00a8e8;" onclick="klickSlot(2,0,0,255,'#00a8e8')"></button>
+            <button id="slot3" class="slot-btn" style="background:#00f5d4;" onclick="klickSlot(3,0,255,220,'#00f5d4')"></button>
+            <button id="slot4" class="slot-btn" style="background:#ff007f;" onclick="klickSlot(4,255,0,127,'#ff007f')"></button>
+            <button id="slot5" class="slot-btn" style="background:#ffb703;" onclick="klickSlot(5,255,183,3,'#ffb703')"></button>
           </div>
+          <button class="btn" style="background:var(--green); margin-top:14px; padding:10px; font-size:12px;" onclick="speichereAktivenSlot()">💾 AUSGEWÄHLTEN SLOT IM CHIP SPEICHERN</button>
         </div>
 
         <div id="fxContainerCard" class="card">
@@ -166,12 +167,16 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.06</div>
+  <div class="version-footer">Ver. 1.07</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
   let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d');
+  
+  // Slot-Speicher Variablen
+  let gewählterSlotId = 0;
+  let aktuellesRadR = 0, aktuellesRadG = 168, aktuellesRadB = 232;
 
   const effekte = [
     "🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer",
@@ -195,6 +200,7 @@
     document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
     document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
   }
+  window.whitespaceTab = function(z) { wechselTab(z); };
 
   function senden(b) { 
     if (bleChar) {
@@ -205,7 +211,11 @@
   async function verbinden() {
     try {
       document.getElementById('status').innerText = "Suche Scheinwerfer...";
-      bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ name: 'i20N Scheinwerfer' }], optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] });
+      // Filter erweitert um die Verbindung für iPhones stabiler zu erzwingen
+      bleDevice = await navigator.bluetooth.requestDevice({ 
+        filters: [{ name: 'i20N Scheinwerfer' }], 
+        optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] 
+      });
       const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
       bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
       document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
@@ -285,6 +295,9 @@
     let sat = Math.min(100, Math.round((dist / center) * 100));
     let rGbc = hslZuRgb(winkel, sat, 50);
     
+    // Speichere die aktuelle Live-Farbe im RAM
+    aktuellesRadR = rGbc.r; aktuellesRadG = rGbc.g; aktuellesRadB = rGbc.b;
+    
     let hex = "#" + ((1 << 24) + (rGbc.r << 16) + (rGbc.g << 8) + rGbc.b).toString(16).slice(1);
     const p = document.getElementById('colorPreview');
     if (p) { p.style.backgroundColor = hex; p.style.color = (rGbc.r*0.299 + rGbc.g*0.587 + rGbc.b*0.114) > 186 ? '#000' : '#fff'; }
@@ -292,10 +305,23 @@
     let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW:" + rGbc.r + "," + rGbc.g + "," + rGbc.b + ",0"); }
   }
 
-  function wähleSlotFarbe(r, g, b, hexStr) {
+  // Überarbeitete Slot-Funktion
+  function klickSlot(id, r, g, b, hexStr) {
+    gewählterSlotId = id;
+    document.querySelectorAll('.slot-btn').forEach(btn => btn.classList.remove('selected'));
+    document.getElementById('slot' + id).classList.add('selected');
+    
+    aktuellesRadR = r; aktuellesRadG = g; aktuellesRadB = b;
     const p = document.getElementById('colorPreview');
     if (p) { p.style.backgroundColor = hexStr; p.style.color = (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000' : '#fff'; }
     senden("RGBW:" + r + "," + g + "," + b + ",0");
+  }
+
+  function speichereAktivenSlot() {
+    let hexColor = document.getElementById('colorPreview').style.backgroundColor;
+    document.getElementById('slot' + gewählterSlotId).style.backgroundColor = hexColor;
+    // Sende den neuen Speicher-String an den Chip (SLOT:ID,R,G,B)
+    senden("SLOTSET:" + gewählterSlotId + "," + aktuellesRadR + "," + aktuellesRadG + "," + aktuellesRadB);
   }
 
   function hslZuRgb(h, s, l) {
@@ -347,13 +373,10 @@
   }
   function onBriSliderChange() { let b = document.getElementById('briSlider').value; document.getElementById('briText').innerText = b+"%"; senden("BRI:"+b); }
 
-  // --- HIER SITZT JETZT DIE INITIALISIERUNG AM AUSFALLSICHEREN ENDE ---
   zeichneFarbrad();
-  
   canvas.addEventListener('touchstart', handleTouchFarbe, {passive: false});
   canvas.addEventListener('touchmove', handleTouchFarbe, {passive: false});
   
-  // Computer-Maus-Klicks erlauben
   let mouseActive = false;
   canvas.addEventListener('mousedown', (e) => { mouseActive = true; handleTouchFarbe(e); });
   canvas.addEventListener('mousemove', (e) => { if (mouseActive) handleTouchFarbe(e); });
