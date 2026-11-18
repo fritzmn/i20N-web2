@@ -91,7 +91,7 @@
         Es wird <strong>keinerlei Haftung</strong> für Bußgelder, Stilllegungen oder Schäden übernommen, falls dieses System missbräuchlich im öffentlichen Straßenverkehr verwendet wird. Zur rechtlichen Absicherung ist das Modul mit einem integrierten G-Kraft-Sensor ausgestattet, welcher bunte Lichtspielereien bei Bewegung automatisch unterbindet.<br><br>
         <div style="text-align: center; font-weight: 900; color: var(--nblue); font-size: 15px; margin-top: 10px; font-style: italic;">Viel Spaß!</div>
       </div>
-      <button class="modal-btn" onclick="document.getElementById('legalModal').style.display='none'">Ich verstehe & akzeptiere</button>
+      <button class="modal-btn" onclick="akzeptiereDisclaimer()">Ich verstehe & akzeptiere</button>
     </div>
   </div>
 
@@ -111,7 +111,7 @@
   <div class="tab-row">
     <button id="tabShow" class="tab-btn tab-active" onclick="wechselTab('SHOW')">🎨 Show & Effekte</button>
     <button id="tabTfl" class="tab-btn" onclick="wechselTab('TFL')">☀️ Standlicht</button>
-    <button id="tabWel" class="tab-btn" onclick="whitespaceTab('WEL')">👋 Welcome</button>
+    <button id="tabWel" class="tab-btn" onclick="wechselTab('WEL')">👋 Welcome</button>
   </div>
 
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
@@ -175,18 +175,18 @@
       <div class="card">
         <div class="card-title"><span>👋 Welcome-Home Animation</span></div>
         <div class="grid" id="welcomeGrid"></div>
-        <button class="btn" style="background:var(--green); margin-top:18px;" onclick="senden('WELSET:'+welcomeTyp)">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
+        <button class="btn" style="background:var(--green); margin-top:18px;" onclick="speichereWelcome()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
       </div>
     </div>
   </div>
 
-  <div class="version-footer">Ver. 2.30</div>
+  <div class="version-footer">Ver. 2.40</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
   let gforceProtectAktiv = false, lastX = null, lastY = null;
   let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
-  let isSending = false; // FIX VER. 2.30: Physischer Sende-Riegel gegen Überlastung
+  let isSending = false;
 
   const effekte = [
     "🎨 1. Festfarbe", "🌊 2. Pulsieren / Atmen", "💓 3. Herzschlag", "⚡ 4. Strobo-Blitzer",
@@ -197,6 +197,20 @@
     "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Laser"
   ];
   const welEffekte = ["🌅 1. Sanft Hochdimmen", "⚡ 2. Doppel-Blitz & Dim", "🚫 8. Aus (Sofort An)"];
+
+  function akzeptiereDisclaimer() {
+    document.getElementById('legalModal').style.display = 'none';
+  }
+
+  function wechselTab(z) {
+    document.getElementById('viewShow').className = z === 'SHOW' ? '' : 'hidden';
+    document.getElementById('viewTfl').className = z === 'TFL' ? '' : 'hidden';
+    document.getElementById('viewWel').className = z === 'WEL' ? '' : 'hidden';
+    document.getElementById('tabShow').className = 'tab-btn' + (z === 'SHOW' ? ' tab-active' : '');
+    document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
+    document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
+  }
+  window.whitespaceTab = function(z) { wechselTab(z); };
 
   function verarbeiteChipDaten(msg) {
     if (msg.startsWith("G:")) {
@@ -246,11 +260,6 @@
 
   function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); senden("AUTO"); }
 
-  const btnFlash = document.getElementById('btnFlashHold');
-  const startFlash = (e) => { e.preventDefault(); if (!bleChar) return; btnFlash.classList.add('pressing'); senden("FLASH:1"); };
-  const stopFlash = (e) => { if (e) e.preventDefault(); btnFlash.classList.remove('pressing'); if (bleChar) senden("FLASH:0"); };
-  btnFlash.addEventListener('pointerdown', startFlash); btnFlash.addEventListener('pointerup', stopFlash); btnFlash.addEventListener('pointerleave', stopFlash); btnFlash.addEventListener('pointercancel', stopFlash);
-
   function onTimerSliderChange() { timerMinuten = parseInt(document.getElementById('tmrSlider').value); document.getElementById('tmrText').innerText = timerMinuten === 0 ? "0 Min (Aus)" : timerMinuten + " Min"; }
   function sendeTimerAufChip() { senden("TMR:" + timerMinuten); if (timerUiInterval) clearInterval(timerUiInterval); const badge = document.getElementById('timerCountdown'); if (timerMinuten > 0) { timerEndZeitpunkt = Date.now() + (timerMinuten * 60000); badge.classList.add('running'); timerUiInterval = setInterval(() => { const restMs = timerEndZeitpunkt - Date.now(); if (restMs <= 0) { clearInterval(timerUiInterval); stoppeTimerUi(); activeFx = 0; updateUI(); } else { const min = Math.floor(restMs / 60000); const sek = Math.floor((restMs % 60000) / 1000); badge.innerText = "⏳ " + min + ":" + (sek < 10 ? "0" + sek : sek); } }, 1000); } else { stoppeTimerUi(); } }
   function stoppeTimerUi() { if (timerUiInterval) clearInterval(timerUiInterval); timerMinuten = 0; document.getElementById('tmrSlider').value = 0; document.getElementById('tmrText').innerText = "0 Min (Aus)"; const badge = document.getElementById('timerCountdown'); badge.innerText = "Aus"; badge.classList.remove('running'); }
@@ -265,7 +274,6 @@
       ctx.fillStyle = grad; ctx.fill();
     }
   }
-  zeichneFarbrad();
 
   function handleTouchFarbe(e) {
     if (!gforceProtectAktiv || isSending) return;
@@ -284,11 +292,8 @@
     if (p) { p.style.backgroundColor = currentHex; p.style.color = (rgb.r*0.299 + rgb.g*0.587 + rgb.b*0.114) > 186 ? '#000' : '#fff'; }
 
     let now = Date.now(); 
-    if (now - lastSend > 75) { lastSend = now; senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0"); }
+    if (now - lastSend > 85) { lastSend = now; senden("RGBW:" + rgb.r + "," + rgb.g + "," + rgb.b + ",0"); }
   }
-
-  canvas.addEventListener('touchstart', handleTouchFarbe, {passive: false});
-  canvas.addEventListener('touchmove', handleTouchFarbe, {passive: false});
 
   function hslZuRgb(h, s, l) {
     h /= 360; s /= 100; l /= 100; let r, g, b;
@@ -316,6 +321,11 @@
     alert("Konfiguration im Flash-Speicher hinterlegt!");
   }
 
+  function speichereWelcome() {
+    senden('WELSET:'+welcomeTyp);
+    alert("Welcome-Effekt im Flash-Speicher abgelegt!");
+  }
+
   function renderFx() {
     const g = document.getElementById('fxGrid'); g.innerHTML = '';
     effekte.forEach((name, i) => {
@@ -333,17 +343,6 @@
     });
   }
 
-  function wechselTab(z) {
-    document.getElementById('viewShow').className = z === 'SHOW' ? '' : 'hidden';
-    document.getElementById('viewTfl').className = z === 'TFL' ? '' : 'hidden';
-    document.getElementById('viewWel').className = z === 'WEL' ? '' : 'hidden';
-    document.getElementById('tabShow').className = 'tab-btn' + (z === 'SHOW' ? ' tab-active' : '');
-    document.getElementById('tabTfl').className = 'tab-btn' + (z === 'TFL' ? ' tab-active' : '');
-    document.getElementById('tabWel').className = 'tab-btn' + (z === 'WEL' ? ' tab-active' : '');
-  }
-  
-  window.whitespaceTab = function(z) { wechselTab(z); };
-
   function updateUI() {
     document.getElementById('btnAuto').className = 'btn btn-auto' + (activeFx === 0 ? ' active-border' : '');
     const buttons = document.querySelectorAll('#fxGrid .btn-fx');
@@ -354,6 +353,17 @@
   }
 
   function onBriSliderChange() { let b = document.getElementById('briSlider').value; document.getElementById('briText').innerText = b+"%"; senden("BRI:"+b); }
+
+  // Initialisierung nach Definition
+  zeichneFarbrad();
+  canvas.addEventListener('touchstart', handleTouchFarbe, {passive: false});
+  canvas.addEventListener('touchmove', handleTouchFarbe, {passive: false});
+  
+  const btnFlashElement = document.getElementById('btnFlashHold');
+  btnFlashElement.addEventListener('pointerdown', startFlash); 
+  btnFlashElement.addEventListener('pointerup', stopFlash); 
+  btnFlashElement.addEventListener('pointerleave', stopFlash); 
+  btnFlashElement.addEventListener('pointercancel', stopFlash);
 
   renderFx(); renderWelcome();
 </script>
