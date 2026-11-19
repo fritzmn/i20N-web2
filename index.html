@@ -39,6 +39,13 @@
     .btn-flash { background: linear-gradient(135deg, #ff9e00 0%, #d00000 100%); padding: 16px 8px; font-size: 14px; box-shadow: 0 4px 15px rgba(208, 0, 0, 0.35); width: 100%; }
     .btn-flash.pressing { background: #ffffff; color: #000000; text-shadow: none; }
     
+    .btn-gprotect { background: linear-gradient(135deg, #ef233c 0%, #9b0b1d 100%); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 4px 14px rgba(239, 35, 60, 0.35); margin-bottom: 10px; }
+    .btn-gprotect.active { background: linear-gradient(135deg, #0096c7 0%, #023e8a 100%); border: 1px solid #48cae4; box-shadow: 0 4px 14px rgba(0, 150, 199, 0.4); }
+    .btn-calib { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); margin-top: 2px; }
+
+    .locked { opacity: 0.22; filter: grayscale(100%); pointer-events: none !important; }
+    .lock-banner { background: linear-gradient(135deg, rgba(230, 57, 70, 0.22) 0%, rgba(155, 11, 29, 0.25) 100%); border: 1px solid var(--nred); color: #ffccd5; padding: 12px; border-radius: 12px; font-size: 12px; text-align: center; margin-top: 12px; width: 100%; max-width: 400px; font-weight: bold; line-height: 1.4; }
+
     .tab-row { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 400px; margin-top: 12px; gap: 8px; z-index: 10; }
     .tab-btn { background: linear-gradient(145deg, #252a34 0%, #171a21 100%); padding: 12px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: var(--sub); font-weight: 800; font-size: 12px; cursor: pointer; text-align: center; transition: 0.15s; }
     .tab-active { background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4); }
@@ -104,7 +111,15 @@
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
     
     <div id="viewShow">
-      <div id="showContent">
+      <!-- NEUER HINWEISTEXT UND STEUERUNGSKNÖPFE FÜR DEN G-KRAFT SENSOR -->
+      <div id="lockBanner" class="lock-banner">🔒 Show-Modus gesperrt!<br>Bitte aktiviere zuerst den G-Kraft-Sensor, um das Farbrad und die Effekte freizuschalten. Bei Bewegung schaltet das Licht automatisch zurück auf Weiß.</div>
+      
+      <div class="card">
+        <button id="btnGprotect" class="btn btn-gprotect" onclick="toggleGforceProtect()">🔒 G-Kraft-Sensor aktivieren & nullen</button>
+        <button id="btnCalib" class="btn btn-calib locked" onclick="senden('CALIB')">📍 G-Kraft-Sensor manuell nachkalibrieren</button>
+      </div>
+
+      <div id="showContent" class="locked">
         <div class="card">
           <div class="card-title"><span>🕹️ Live-Trigger</span></div>
           <button id="btnFlashHold" class="btn btn-flash">⚡ FLASH HOLD <span style="font-size:11px; font-weight:normal;">(Gedrückt halten)</span></button>
@@ -144,6 +159,7 @@
       </div>
     </div>
 
+    <!-- STANDLICHT UND WELCOME BLEIBEN IMMER UNABHÄNGIG FREI BEDIENBAR -->
     <div id="viewTfl" class="hidden">
       <div class="card">
         <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
@@ -167,13 +183,14 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.40</div>
+  <div class="version-footer">Ver. 1.50</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
   let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d');
   
+  let gforceSperreAktiv = false;
   let gewählterSlotId = 0;
   let aktuellesRadR = 0, aktuellesRadG = 168, aktuellesRadB = 232;
 
@@ -210,15 +227,58 @@
   async function verbinden() {
     try {
       document.getElementById('status').innerText = "Suche Scheinwerfer...";
-      // 100% BITGENAUE ID SYNCHRONISATION MIT DEM CHIP (Ver. 1.40)
+      // SYNCHRONISIERTER SUCHNAME AUF „i20N DRL Modul“ (Ver. 1.50)
       bleDevice = await navigator.bluetooth.requestDevice({ 
-        filters: [{ name: 'i20N' }], 
+        filters: [{ name: 'i20N DRL Modul' }], 
         optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914c'] 
       });
       const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914c');
       bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a9');
       document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
+      
+      // Rückkanal abhören, falls der G-Kraft-Sensor beim Fahren auslöst
+      await bleChar.startNotifications();
+      bleChar.addEventListener('characteristicvaluechanged', (e) => {
+        let antwort = new TextDecoder().decode(e.target.value);
+        if (antwort === "FORCE_AUTO") {
+          // Hartes Zurücksetzen der Oberfläche, da das Auto losgefahren ist
+          gforceSperreAktiv = false;
+          const btn = document.getElementById('btnGprotect');
+          btn.classList.remove('active'); 
+          btn.innerText = "🔒 G-Kraft-Sensor aktivieren & nullen";
+          document.getElementById('btnCalib').classList.add('locked');
+          document.getElementById('showContent').classList.add('locked');
+          document.getElementById('lockBanner').classList.remove('hidden');
+          activeFx = 0; 
+          stoppeTimerUi(); 
+          updateUI();
+        }
+      });
     } catch (err) { document.getElementById('status').innerText = "❌ Fehler"; }
+  }
+
+  function toggleGforceProtect() {
+    gforceSperreAktiv = !gforceSperreAktiv;
+    const btn = document.getElementById('btnGprotect');
+    const calibBtn = document.getElementById('btnCalib');
+    
+    if (gforceSperreAktiv) {
+      btn.classList.add('active'); 
+      btn.innerText = "🛡️ G-Kraft-Schutz AKTIV";
+      calibBtn.classList.remove('locked');
+      document.getElementById('showContent').classList.remove('locked');
+      document.getElementById('lockBanner').classList.add('hidden');
+      senden("G_PROT:1"); // Sendet Aktivierung und triggert automatische Nullung auf dem Chip
+    } else {
+      btn.classList.remove('active'); 
+      btn.innerText = "🔒 G-Kraft-Sensor aktivieren & nullen";
+      calibBtn.classList.add('locked');
+      document.getElementById('showContent').classList.add('locked');
+      document.getElementById('lockBanner').classList.remove('hidden');
+      senden("G_PROT:0");
+      activeFx = 0;
+      updateUI();
+    }
   }
 
   function aktiviereAuto() { activeFx = 0; stoppeTimerUi(); updateUI(); senden("AUTO"); }
