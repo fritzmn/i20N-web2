@@ -167,7 +167,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.20</div>
+  <div class="version-footer">Ver. 1.40</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
@@ -210,9 +210,9 @@
   async function verbinden() {
     try {
       document.getElementById('status').innerText = "Suche Scheinwerfer...";
-      // PASSENDE SERVICE-UUID SYNCHRONISIERT FÜR GEÄNDERTE FUNK-IDENTITÄT
+      // 100% BITGENAUE ID SYNCHRONISATION MIT DEM CHIP (Ver. 1.40)
       bleDevice = await navigator.bluetooth.requestDevice({ 
-        filters: [{ name: 'i20N Scheinwerfer' }], 
+        filters: [{ name: 'i20N' }], 
         optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914c'] 
       });
       const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914c');
