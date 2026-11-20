@@ -99,7 +99,7 @@
   </div>
 
   <div class="card">
-    <button class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
+    <button id="btnConnect" class="btn btn-connect" onclick="verbinden()">🔵 Mit Scheinwerfern verbinden</button>
     <button id="btnAuto" class="btn btn-auto active-border" onclick="aktiviereAuto()">☀️ TAGESFAHRLICHT MODUS</button>
   </div>
 
@@ -184,11 +184,12 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.91</div>
+  <div class="version-footer">Ver. 1.94</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
   let timerMinuten = 0, timerEndZeitpunkt = 0, timerUiInterval = null;
+  let reconnectInterval = null;
   const canvas = document.getElementById('colorWheel'), ctx = canvas.getContext('2d');
   
   let gforceSperreAktiv = false;
@@ -215,8 +216,33 @@
     "🚫 8. Aus (Sofort An)"
   ];
 
+  // NEU IN VER. 1.94: Startet beim Schließen des Disclaimers direkt die Suche/Verbindung
   function akzeptiereDisclaimer() {
     document.getElementById('legalModal').style.display = 'none';
+    autoConnectVersuch(true);
+  }
+
+  // Versucht bereits gekoppelte Geräte ohne Suchfenster zu finden (falls von Bluefy unterstützt)
+  async function autoConnectVersuch(mitFallbackPopup = false) {
+    try {
+      if (navigator.bluetooth && navigator.bluetooth.getDevices) {
+        const devices = await navigator.bluetooth.getDevices();
+        const meinModul = devices.find(d => d.name === 'i20N DRL Modul');
+        if (meinModul) {
+          bleDevice = meinModul;
+          bleDevice.removeEventListener('gattserverdisconnected', onVerbindungGetrennt);
+          bleDevice.addEventListener('gattserverdisconnected', onVerbindungGetrennt);
+          document.getElementById('status').innerText = "Verbinde automatisch...";
+          await verbindeGatt(bleDevice);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // Falls noch nicht bekannt oder iOS getDevices blockiert: beim Disclaimer-Klick direkt verbinden
+    if (mitFallbackPopup) {
+      verbinden();
+    }
   }
 
   function wechselTab(z) {
@@ -231,38 +257,81 @@
 
   function senden(b) { 
     if (bleChar) {
-      bleChar.writeValueWithoutResponse(new TextEncoder().encode(b)).catch(()=>{});
+      bleChar.writeValueWithoutResponse(new TextEncoder().encode(b)).catch(() => {
+        onVerbindungGetrennt();
+      });
     }
+  }
+
+  function onVerbindungGetrennt() {
+    bleChar = null;
+    const st = document.getElementById('status');
+    st.innerText = "❌ Getrennt – suche...";
+    st.style.color = "#e63946";
+    document.getElementById('btnConnect').innerText = "🔄 Neu verbinden";
+    
+    if (reconnectInterval) clearInterval(reconnectInterval);
+    reconnectInterval = setInterval(async () => {
+      if (bleDevice && !bleChar) {
+        try {
+          await verbindeGatt(bleDevice);
+        } catch (e) {}
+      }
+    }, 3000);
+  }
+
+  async function verbindeGatt(device) {
+    const s = await device.gatt.connect();
+    const svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914c');
+    bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a9');
+    
+    if (reconnectInterval) { clearInterval(reconnectInterval); reconnectInterval = null; }
+    
+    const st = document.getElementById('status');
+    st.innerText = "✅ Verbunden"; 
+    st.style.color = "#38b000";
+    document.getElementById('btnConnect').innerText = "🔵 Mit Scheinwerfern verbinden";
+    
+    await bleChar.startNotifications();
+    bleChar.addEventListener('characteristicvaluechanged', (e) => {
+      let antwort = new TextDecoder().decode(e.target.value);
+      if (antwort === "FORCE_AUTO") {
+        gforceSperreAktiv = false;
+        const btn = document.getElementById('btnGprotect');
+        btn.classList.remove('active'); 
+        btn.innerText = "🔒 G-Kraft-Sensor aktivieren & nullen";
+        document.getElementById('btnCalib').classList.add('locked');
+        document.getElementById('showContent').classList.add('locked');
+        document.getElementById('lockBanner').classList.remove('hidden');
+        activeFx = 0; 
+        stoppeTimerUi(); 
+        updateUI();
+      }
+    });
   }
 
   async function verbinden() {
     try {
-      document.getElementById('status').innerText = "Suche Scheinwerfer...";
+      const st = document.getElementById('status');
+      st.innerText = "Suche Scheinwerfer...";
+      st.style.color = "#9aa5b4";
+
+      if (reconnectInterval) { clearInterval(reconnectInterval); reconnectInterval = null; }
+
       bleDevice = await navigator.bluetooth.requestDevice({ 
         filters: [{ name: 'i20N DRL Modul' }], 
         optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914c'] 
       });
-      const s = await bleDevice.gatt.connect(), svc = await s.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914c');
-      bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a9');
-      document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
-      
-      await bleChar.startNotifications();
-      bleChar.addEventListener('characteristicvaluechanged', (e) => {
-        let antwort = new TextDecoder().decode(e.target.value);
-        if (antwort === "FORCE_AUTO") {
-          gforceSperreAktiv = false;
-          const btn = document.getElementById('btnGprotect');
-          btn.classList.remove('active'); 
-          btn.innerText = "🔒 G-Kraft-Sensor aktivieren & nullen";
-          document.getElementById('btnCalib').classList.add('locked');
-          document.getElementById('showContent').classList.add('locked');
-          document.getElementById('lockBanner').classList.remove('hidden');
-          activeFx = 0; 
-          stoppeTimerUi(); 
-          updateUI();
-        }
-      });
-    } catch (err) { document.getElementById('status').innerText = "❌ Fehler"; }
+
+      bleDevice.removeEventListener('gattserverdisconnected', onVerbindungGetrennt);
+      bleDevice.addEventListener('gattserverdisconnected', onVerbindungGetrennt);
+
+      await verbindeGatt(bleDevice);
+    } catch (err) { 
+      const st = document.getElementById('status');
+      st.innerText = "❌ Nicht verbunden"; 
+      st.style.color = "#e63946";
+    }
   }
 
   function toggleGforceProtect() {
@@ -341,7 +410,7 @@
     if (e.preventDefault) e.preventDefault();
     let currentTouch = null;
     if (e.touches && e.touches.length > 0) {
-      currentTouch = e.touches[0]; // FIX VER. 1.91: Ersten Finger sauber auslesen
+      currentTouch = e.touches[0];
     } else if (e.clientX !== undefined) {
       currentTouch = e;
     }
@@ -477,6 +546,9 @@
   }
 
   renderFx(); renderWelcome();
+  
+  // Versucht beim Laden der Seite sofort nach bekannten Geräten zu suchen
+  window.addEventListener('load', () => { autoConnectVersuch(false); });
 </script>
 </body>
 </html>
