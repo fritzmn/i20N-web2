@@ -65,6 +65,7 @@
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 25px; height: 25px; border-radius: 50%; background: linear-gradient(135deg, #ffffff 0%, #d8e2dc 100%); border: 3px solid var(--nblue); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 168, 232, 0.6); }
     #tonSlider { background: linear-gradient(90deg, #ffd166 0%, #ffffff 50%, #4cc9f0 100%); }
     #briSlider { background: linear-gradient(90deg, #161920 0%, #00b4d8 50%, #ffffff 100%); }
+    #spdSlider { background: linear-gradient(90deg, #2b313d 0%, #00b4d8 50%, #e63946 100%); }
     #tmrSlider { background: linear-gradient(90deg, #2b313d 0%, #7209b7 50%, #e63946 100%); }
     .slider-hints { display: flex; justify-content: space-between; font-size: 11px; color: #7a8594; margin-bottom: 6px; font-weight: 500; }
     .timer-badge { background: linear-gradient(135deg, #252a34 0%, #181b22 100%); padding: 4px 10px; border-radius: 8px; font-size: 12px; color: var(--nblue); font-weight: 800; border: 1px solid rgba(0, 168, 232, 0.3); }
@@ -146,6 +147,11 @@
 
         <div id="fxContainerCard" class="card">
           <div class="card-title"><span>✨ 24 Show-Effekte</span></div>
+          
+          <!-- NEUER GESCHWINDIGKEITSREGLER FÜR DIE EFFEKTE -->
+          <div class="sub-label" style="margin-top:0;"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
+          <input type="range" id="spdSlider" min="10" max="100" value="50" oninput="onSpdSliderChange()" style="margin-bottom:14px;">
+          
           <div class="grid" id="fxGrid"></div>
         </div>
 
@@ -181,7 +187,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.60</div>
+  <div class="version-footer">Ver. 1.90</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
@@ -201,7 +207,6 @@
     "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Laser"
   ];
   
-  // ALLE 7 WELCOME-EFFEKT-MODI PLUS AUS-OPTION
   const welEffekte = [
     "🌅 1. Sanft Hochdimmen", 
     "⚡ 2. Doppel-Blitz & Dim", 
@@ -339,7 +344,7 @@
     if (e.preventDefault) e.preventDefault();
     let currentTouch = null;
     if (e.touches && e.touches.length > 0) {
-      currentTouch = e.touches[0];
+      currentTouch = e.touches;
     } else if (e.clientX !== undefined) {
       currentTouch = e;
     }
@@ -398,7 +403,6 @@
 
   function bTflMix(t) { return { r: t<50 ? 255 : Math.round(255-(110*(t-50)/50)), g: t<50 ? Math.round(180+75*(t/50)) : Math.round(255-20*(t-50)/50), b: t<50 ? Math.round(60+195*(t/50)) : 255, w: 255 }; }
 
-  // LIVE-VORSCHAU FÜR TAG UND NACHT GETRENNT (Ver. 1.60)
   function onTflSliderChange(quelle) {
     let ton = parseInt(document.getElementById('tonSlider').value);
     let tag = parseInt(document.getElementById('tagSlider').value);
@@ -409,7 +413,6 @@
     document.getElementById('nachtText').innerText = nacht+"%";
     
     let mix = bTflMix(ton);
-    // Wenn der Nacht-Slider bewegt wird, sende direkt die Nacht-Helligkeit als Live-Vorschau
     let f = (quelle === 'NACHT') ? (nacht / 100) : (tag / 100);
     
     let now = Date.now(); 
@@ -454,6 +457,13 @@
     buttons.forEach((b, i) => { if (activeFx === (i+1)) b.classList.add('active'); else b.classList.remove('active'); });
   }
   function onBriSliderChange() { let b = document.getElementById('briSlider').value; document.getElementById('briText').innerText = b+"%"; senden("BRI:"+b); }
+  
+  function onSpdSliderChange() { 
+    let s = document.getElementById('spdSlider').value; 
+    document.getElementById('spdText').innerText = s+"%"; 
+    let now = Date.now();
+    if (now - lastSend > 85) { lastSend = now; senden("SPD:"+s); }
+  }
 
   zeichneFarbrad();
   canvas.addEventListener('touchstart', handleTouchFarbe, {passive: false});
