@@ -147,11 +147,8 @@
 
         <div id="fxContainerCard" class="card">
           <div class="card-title"><span>✨ 24 Show-Effekte</span></div>
-          
-          <!-- NEUER GESCHWINDIGKEITSREGLER FÜR DIE EFFEKTE -->
           <div class="sub-label" style="margin-top:0;"><span>⚡ Effekt-Geschwindigkeit</span><span id="spdText">50%</span></div>
           <input type="range" id="spdSlider" min="10" max="100" value="50" oninput="onSpdSliderChange()" style="margin-bottom:14px;">
-          
           <div class="grid" id="fxGrid"></div>
         </div>
 
@@ -187,7 +184,7 @@
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.90</div>
+  <div class="version-footer">Ver. 1.91</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
@@ -344,7 +341,7 @@
     if (e.preventDefault) e.preventDefault();
     let currentTouch = null;
     if (e.touches && e.touches.length > 0) {
-      currentTouch = e.touches;
+      currentTouch = e.touches[0]; // FIX VER. 1.91: Ersten Finger sauber auslesen
     } else if (e.clientX !== undefined) {
       currentTouch = e;
     }
