@@ -111,7 +111,6 @@
   <div style="width: 100%; max-width: 400px; padding-bottom: 30px;">
     
     <div id="viewShow">
-      <!-- NEUER HINWEISTEXT UND STEUERUNGSKNÖPFE FÜR DEN G-KRAFT SENSOR -->
       <div id="lockBanner" class="lock-banner">🔒 Show-Modus gesperrt!<br>Bitte aktiviere zuerst den G-Kraft-Sensor, um das Farbrad und die Effekte freizuschalten. Bei Bewegung schaltet das Licht automatisch zurück auf Weiß.</div>
       
       <div class="card">
@@ -159,31 +158,30 @@
       </div>
     </div>
 
-    <!-- STANDLICHT UND WELCOME BLEIBEN IMMER UNABHÄNGIG FREI BEDIENBAR -->
     <div id="viewTfl" class="hidden">
       <div class="card">
         <div class="card-title"><span>☀️ Standlicht Farbton & Helligkeit</span></div>
         <div class="sub-label"><span>Weißton-Einstellung</span><span id="tonText">60%</span></div>
-        <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange()">
+        <input type="range" id="tonSlider" min="0" max="100" value="60" oninput="onTflSliderChange('TAG')">
         <div class="slider-hints"><span>Warmer Farbton</span><span>Blauer Kaltton</span></div>
         <div class="sub-label"><span>☀️ Tagesfahrlicht Helligkeit (Tag)</span><span id="tagText">100%</span></div>
-        <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange()">
+        <input type="range" id="tagSlider" min="0" max="100" value="100" oninput="onTflSliderChange('TAG')">
         <div class="sub-label"><span>🌙 Tagesfahrlicht + Abblendlicht (Nacht)</span><span id="nachtText">20%</span></div>
-        <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange()">
+        <input type="range" id="nachtSlider" min="0" max="70" value="20" oninput="onTflSliderChange('NACHT')">
         <button class="btn" style="background:var(--green); margin-top:18px;" onclick="speichereTfl()">💾 STANDLICHT IM CHIP SPEICHERN</button>
       </div>
     </div>
 
     <div id="viewWel" class="hidden">
       <div class="card">
-        <div class="card-title"><span>👋 Welcome-Home Animation</span></div>
+        <div class="card-title"><span>👋 Welcome-Home Animation (4 Sek.)</span></div>
         <div class="grid" id="welcomeGrid"></div>
         <button class="btn" style="background:var(--green); margin-top:18px;" onclick="speichereWelcome()">💾 WELCOME-EFFEKT IM CHIP SPEICHERN</button>
       </div>
     </div>
   </div>
 
-  <div class="version-footer">Ver. 1.50</div>
+  <div class="version-footer">Ver. 1.60</div>
 
 <script>
   let bleDevice = null, bleChar = null, lastSend = 0, activeFx = 0, welcomeTyp = 1;
@@ -202,7 +200,18 @@
     "🔥 17. Exhaust Pop & Bang", "☢️ 18. Cyberpunk Glitch", "⚡ 19. Highway Lichthupe", "🌋 20. Plasma & Magma",
     "🌀 21. Turbo Blow-Off", "🏁 22. Track Boxer-Start", "🔮 23. Hyperraum-Sprung", "🎮 24. Retro Laser"
   ];
-  const welEffekte = ["🌅 1. Sanft Hochdimmen", "⚡ 2. Doppel-Blitz & Dim", "🚫 8. Aus (Sofort An)"];
+  
+  // ALLE 7 WELCOME-EFFEKT-MODI PLUS AUS-OPTION
+  const welEffekte = [
+    "🌅 1. Sanft Hochdimmen", 
+    "⚡ 2. Doppel-Blitz & Dim", 
+    "💓 3. Herzschlag-Gruß", 
+    "🔦 4. Strobo-Aufwachen",
+    "🌊 5. Sanfte Atem-Welle",
+    "✨ 6. Dreifach-Salve",
+    "🚀 7. Soft-Start & Peak",
+    "🚫 8. Aus (Sofort An)"
+  ];
 
   function akzeptiereDisclaimer() {
     document.getElementById('legalModal').style.display = 'none';
@@ -227,7 +236,6 @@
   async function verbinden() {
     try {
       document.getElementById('status').innerText = "Suche Scheinwerfer...";
-      // SYNCHRONISIERTER SUCHNAME AUF „i20N DRL Modul“ (Ver. 1.50)
       bleDevice = await navigator.bluetooth.requestDevice({ 
         filters: [{ name: 'i20N DRL Modul' }], 
         optionalServices: ['4fafc201-1fb5-459e-8fcc-c5c9c331914c'] 
@@ -236,12 +244,10 @@
       bleChar = await svc.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a9');
       document.getElementById('status').innerText = "✅ Verbunden"; document.getElementById('status').style.color = "#38b000";
       
-      // Rückkanal abhören, falls der G-Kraft-Sensor beim Fahren auslöst
       await bleChar.startNotifications();
       bleChar.addEventListener('characteristicvaluechanged', (e) => {
         let antwort = new TextDecoder().decode(e.target.value);
         if (antwort === "FORCE_AUTO") {
-          // Hartes Zurücksetzen der Oberfläche, da das Auto losgefahren ist
           gforceSperreAktiv = false;
           const btn = document.getElementById('btnGprotect');
           btn.classList.remove('active'); 
@@ -268,7 +274,7 @@
       calibBtn.classList.remove('locked');
       document.getElementById('showContent').classList.remove('locked');
       document.getElementById('lockBanner').classList.add('hidden');
-      senden("G_PROT:1"); // Sendet Aktivierung und triggert automatische Nullung auf dem Chip
+      senden("G_PROT:1"); 
     } else {
       btn.classList.remove('active'); 
       btn.innerText = "🔒 G-Kraft-Sensor aktivieren & nullen";
@@ -392,11 +398,25 @@
 
   function bTflMix(t) { return { r: t<50 ? 255 : Math.round(255-(110*(t-50)/50)), g: t<50 ? Math.round(180+75*(t/50)) : Math.round(255-20*(t-50)/50), b: t<50 ? Math.round(60+195*(t/50)) : 255, w: 255 }; }
 
-  function onTflSliderChange() {
-    let ton = parseInt(document.getElementById('tonSlider').value), tag = parseInt(document.getElementById('tagSlider').value), nacht = parseInt(document.getElementById('nachtSlider').value);
-    document.getElementById('tonText').innerText = ton+"%"; document.getElementById('tagText').innerText = tag+"%"; document.getElementById('nachtText').innerText = nacht+"%";
-    let mix = bTflMix(ton), f = tag/100;
-    let now = Date.now(); if (now - lastSend > 85) { lastSend = now; senden("RGBW_TFL:" + Math.round(mix.r*f) + "," + Math.round(mix.g*f) + "," + Math.round(mix.b*f) + "," + Math.round(mix.w*f)); }
+  // LIVE-VORSCHAU FÜR TAG UND NACHT GETRENNT (Ver. 1.60)
+  function onTflSliderChange(quelle) {
+    let ton = parseInt(document.getElementById('tonSlider').value);
+    let tag = parseInt(document.getElementById('tagSlider').value);
+    let nacht = parseInt(document.getElementById('nachtSlider').value);
+    
+    document.getElementById('tonText').innerText = ton+"%"; 
+    document.getElementById('tagText').innerText = tag+"%"; 
+    document.getElementById('nachtText').innerText = nacht+"%";
+    
+    let mix = bTflMix(ton);
+    // Wenn der Nacht-Slider bewegt wird, sende direkt die Nacht-Helligkeit als Live-Vorschau
+    let f = (quelle === 'NACHT') ? (nacht / 100) : (tag / 100);
+    
+    let now = Date.now(); 
+    if (now - lastSend > 85) { 
+      lastSend = now; 
+      senden("RGBW_TFL:" + Math.round(mix.r*f) + "," + Math.round(mix.g*f) + "," + Math.round(mix.b*f) + "," + Math.round(mix.w*f)); 
+    }
   }
 
   function speichereTfl() {
@@ -419,7 +439,13 @@
     welEffekte.forEach((name) => {
       let b = document.createElement('button'); b.className = 'btn btn-fx'; b.innerText = name;
       let id = parseInt(name.match(/\d+/));
-      b.onclick = () => { welcomeTyp = id; senden("WELTEST:"+id); }; g.appendChild(b);
+      b.onclick = () => { 
+        welcomeTyp = id; 
+        document.querySelectorAll('#welcomeGrid .btn-fx').forEach(btn => btn.classList.remove('active'));
+        b.classList.add('active');
+        senden("WELTEST:"+id); 
+      }; 
+      g.appendChild(b);
     });
   }
   function updateUI() {
